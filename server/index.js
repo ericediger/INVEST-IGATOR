@@ -1,0 +1,10 @@
+import {resolve} from 'node:path';
+import {Store} from './store.js';
+import {createApp} from './app.js';
+process.umask(0o077);
+const port=Number(process.env.PORT||5191), data=resolve(process.env.RESEARCH_DATA_DIR||'runtime');
+if(!Number.isInteger(port)||port<1024||port>65535) throw new Error('Invalid port');
+const store=new Store(resolve(data,'research.sqlite'),resolve(data,'backups'));
+const server=createApp(store,{origin:`http://127.0.0.1:${port}`}).listen(port,'127.0.0.1',()=>console.log(`Investment Research: http://127.0.0.1:${port}`));
+server.requestTimeout=30000; server.headersTimeout=15000;
+for(const signal of ['SIGTERM','SIGINT']) process.on(signal,()=>server.close(()=>{store.close();process.exit(0);}));

@@ -1,0 +1,17 @@
+# Investment Research 1.0 — architecture
+
+Source of truth: investment-research-app-brief__v008__2026-09-06.md (immutable reference). This application does not use the household financial files.
+
+Inspected the server Mac (macOS), local app README/package manifests, project AGENTS.md, and existing launchd backup convention. Existing local apps use Node 20, Express and better-sqlite3. No reverse proxy or protected remote route was established. The owner confirmed this local server is suitable. The application binds **127.0.0.1 only**, with exact Host checks and same-origin write protection. It is available to browsers on this Mac, not the LAN or internet. The operating-system account and loopback boundary provide local access; there is no claim of remote authentication. No existing app, database, port binding or service is replaced.
+
+A separate Node/Express service serves a small accessible browser application and same-origin JSON API. SQLite WAL on local disk is authoritative. A single versioned workspace document makes complete-workspace transactions and portable restoration straightforward at household scale. SQLite stores a random optimistic revision alongside the document; all mutations compare it inside an immediate transaction. Snapshots, scenarios, decisions and company/evidence history are append-only through ordinary API routes. Complete restore is the only replacing operation.
+
+All numerical data starts null/absent. Only the seven specified companies and their explicitly carried-forward source notes are seeded, once when the database is first initialized. Empty restored workspaces remain empty after restart.
+
+Backups use the SQLite online backup API, not filesystem copies of live WAL databases. Pre-restore backups are made under a write transaction before replacement. Retention: latest 30 scheduled/manual backups; pre-restore backups retained until the owner explicitly removes them. Daily launchd backup follows the existing Mac convention. Backups are on this machine; off-machine disaster recovery is an explicit limitation.
+
+Official guidance checked September 6, 2026:
+- https://www.sqlite.org/wal.html — WAL requires all processes on the same host; do not deploy on network storage.
+- https://www.sqlite.org/backup.html — consistent online database backups.
+- https://github.com/WiseLibs/better-sqlite3/blob/master/docs/api.md — synchronous transactions and backup API.
+- https://expressjs.com/en/advanced/best-practice-security/ — untrusted input and production security.
