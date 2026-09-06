@@ -15,6 +15,7 @@ Open **http://127.0.0.1:5191** on this Mac. The watchlist is seeded with ETN, VR
 
 ## Installed locations
 
+- Source repository: `~/.codex/.chatgpt-projects/g-p-6a9d61f2e3248191a56e46d334ad1c53/investment-research`
 - Releases: `~/Desktop/_LOCAL APP DEVELOPMENT/FINANCIAL PLANNING/investment-research/releases/`
 - Active release: `~/Desktop/_LOCAL APP DEVELOPMENT/FINANCIAL PLANNING/investment-research/current`
 - Durable database: `~/Library/Application Support/InvestmentResearch/research.sqlite`
@@ -84,6 +85,8 @@ All automatic backups are currently on the same Mac. They protect against accide
 3. Copy the tested application and installed production dependencies into a **new** `releases/<version>` directory. Preserve the previous release. Do not copy runtime data into it.
 4. Change the `current` symlink to the new release and restart only `com.investmentresearch.app`. Verify `/api/health`, watchlist, saving and backup creation. The app and backup jobs both resolve `current`.
 5. To roll back the application, point `current` to the previous release and restart that same job. Leave the data directory untouched. Version 1.0.0 reads database/workspace schema 1 and refuses a newer database schema. If a future version migrates the schema, code rollback is allowed only if compatible; otherwise a separately approved backup recovery is required. Never silently downgrade the data.
+
+This is the first application release; there is no earlier installed application version to select yet.
 
 Use an atomic symlink replacement (`current.next` → `current`) so the active path is never partially copied. `scripts/install-local.py` is for first install only; it refuses to replace an existing release or LaunchAgent.
 

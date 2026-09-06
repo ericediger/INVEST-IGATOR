@@ -4,11 +4,11 @@ September 6, 2026. All numerical examples below are synthetic fixtures in dispos
 
 ## Automated data/API checks
 
-`npm test`: 14 tests passed, 0 failed.
+`npm test`: 15 tests passed, 0 failed.
 
 - Exactly ETN, VRT, NVT, APH, PWR, FIX and ANET; no prices/scenarios/returns; seed setup does not reset edited research.
 - Company create/edit/archive/restore, confirmation, retained revision history.
-- SQLite close/reopen preserves the complete workspace and saved note.
+- SQLite close/reopen preserves the complete workspace and saved note. A separate integration test saves a note through HTTP, terminates the Node server process, restarts it against the same disposable data directory, and verifies the exact saved workspace and revision.
 - $100 reference → bear $60/−40%, base $100/0%, bull $150/+50%; independent $130 analyst target/+30%.
 - Missing/zero/negative EPS → unavailable P/E. Negative earnings and FCF valid; finite/positive/currency/unit/date/period validation enforced.
 - Incomplete/nonpositive EPS scenario chart unavailable; inconsistent currencies/share bases and unordered complete comparisons rejected.
@@ -31,4 +31,17 @@ Pending. Built-in browser tool reported “No browser is available.” Explicit 
 
 ## Installed-service checks
 
-Pending installation verification. See the operating guide for intended local access, service and backup configuration.
+Passed against the installed release:
+
+- HTTP workspace endpoint returned exactly the seven seeded companies, with no snapshots, scenarios or decisions.
+- `launchctl kickstart -k` restarted only the app service; workspace and optimistic revision remained identical.
+- The installed scheduled-backup job ran successfully on demand.
+- Its SQLite backup restored into a new disposable directory using the documented `restore-database.js` command; integrity and workspace equality checks passed.
+- Listener inspection confirmed `127.0.0.1:5191`, with no LAN/all-interface binding.
+- Both LaunchAgent property lists passed `plutil -lint` and were bootstrapped successfully.
+
+Installed URL: http://127.0.0.1:5191
+
+Backup verified: `backup-2026-09-06T22-09-41-041Z-427dfe87-aa11-4f10-a94a-6b908ba8fe07.sqlite` in the documented persistent backups directory.
+
+Browser acceptance remains the only uncompleted verification area; do not describe desktop/mobile/keyboard/zoom checks or screenshots as passed until the alternate-browser approval is received and those checks run.
