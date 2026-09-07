@@ -1,6 +1,6 @@
 # Same-origin API — schema 1
 
-Base: `http://127.0.0.1:5191/api`. Local access applies to the API and pages equally. No separately exposed agent endpoint. No direct database edits are needed for routine research updates.
+Base: `http://<lan-address>:5191/api` on the approved trusted home LAN, or `http://127.0.0.1:5191/api` on the server. The socket-peer subnet and exact-host checks apply to the API and pages equally. No separately exposed agent endpoint. No direct database edits are needed for routine research updates.
 
 Reads:
 
@@ -9,7 +9,7 @@ Reads:
 - `GET /health` → runtime availability and supported schema version.
 - `GET /backups` → local backup filenames and sizes (no download route).
 
-All POST requests require `Origin: http://127.0.0.1:5191`, `Content-Type: application/json`, `X-Research-Request: 1`. Mutations/restore additionally require `If-Match: <revision from last read>`. Revisions are opaque random tokens; never predict/increment them. The maximum request body is 5 MB; workspace documents are limited to 4 MB so every saved workspace can be exported and restored within that request limit. Origin/Host checks do not replace authentication if the app is ever deployed remotely: remote deployment must first add a protected HTTPS boundary and explicit access agreement.
+All POST requests require an Origin exactly matching the URL being used (`http://<lan-address>:5191` or `http://127.0.0.1:5191`), `Content-Type: application/json`, `X-Research-Request: 1`. Mutations/restore additionally require `If-Match: <revision from last read>`. Revisions are opaque random tokens; never predict/increment them. The maximum request body is 5 MB; workspace documents are limited to 4 MB so every saved workspace can be exported and restored within that request limit. The owner approved the trusted home LAN boundary without a login. Outside that boundary, protected authenticated HTTPS and a new access agreement are required. Cross-origin requests between the two allowed addresses are still rejected; serve the page and API from the same address.
 
 `POST /actions` takes `{action, payload}` and returns the new `{revision,workspace}`. Server validation, immediate transactions, optimistic concurrency and history rules are shared by UI and programmatic writes.
 

@@ -45,3 +45,7 @@ Installed URL: http://127.0.0.1:5191
 Backup verified: `backup-2026-09-06T22-09-41-041Z-427dfe87-aa11-4f10-a94a-6b908ba8fe07.sqlite` in the documented persistent backups directory.
 
 Browser acceptance remains the only uncompleted verification area; do not describe desktop/mobile/keyboard/zoom checks or screenshots as passed until the alternate-browser approval is received and those checks run.
+
+## Release 1.0.1 — home-network access verification
+
+Production syntax checks passed; **18 tests passed, 0 failed**. The expanded test suite covers explicit private-network configuration, rejection of public/all-interface/mismatched subnet settings, exact Host and peer-subnet allowlists, LAN-origin page/API reads and saving, shared data through both supported addresses, forged forwarding headers and cross-origin write rejection. Installed release 1.0.1 was verified through both http://<lan-address>:5191 and http://127.0.0.1:5191. The LAN page and API returned successfully, and the complete saved workspace matched its pre-update state. Listener inspection confirmed exactly those two IPv4 bindings on port 5191. A pre-update database backup was created and release 1.0.0 plus its prior service configuration were retained. The existing macOS firewall was found disabled; no firewall setting was changed. The earlier browser-tool limitation remains unchanged.

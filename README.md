@@ -1,6 +1,6 @@
-# Investment Research — local MVP 1.0.0
+# Investment Research — local MVP 1.0.1
 
-Open **http://127.0.0.1:5191** on this Mac. The watchlist is seeded with ETN, VRT, NVT, APH, PWR, FIX and ANET. Financial values start blank. No household account data was imported.
+Open **http://<lan-address>:5191** from your trusted home network, or **http://127.0.0.1:5191** on the server Mac. The watchlist is seeded with ETN, VRT, NVT, APH, PWR, FIX and ANET. Financial values start blank. No household account data was imported.
 
 ## Everyday use
 
@@ -28,9 +28,11 @@ Data, logs and backups are outside the release and static assets. Upgrading or s
 
 ## Access
 
-The service binds **127.0.0.1 only**. Use the exact numeric-host URL; `localhost` aliases are intentionally rejected by Host validation. Both pages and data APIs enforce this boundary. Writes also require the exact Origin, a custom request header and JSON content type. Cross-site fetches, framing, executable source links and static access to database/source files are blocked.
+The owner explicitly confirmed **“Trusted home network; no login”** on September 6, 2026. The installed service binds only **127.0.0.1** and **<lan-address>** on port **5191**. It accepts socket peers from loopback and **<trusted-subnet>**, and validates the exact Host and write Origin for each address. Both pages and APIs use the same checks. Forwarded headers do not grant access. The research data and backups remain on the server Mac.
 
-This is local access protected by the Mac account and loopback networking, not a remotely authenticated service. No proxy, router, public host, tunnel, Cloudflare Site or LAN binding was added. Other local processes/users with access to this Mac can reach its loopback service. Remote/multi-device access requires a separately agreed protected HTTPS route; it is not enabled in this MVP.
+This is HTTP without application login or transport encryption; its protection is the owner-confirmed trusted home LAN. Every device on that subnet can read, edit, export and restore this single workspace. No router, public host, public IPv6 listener, tunnel, proxy or firewall change was made. This is not suitable for public or untrusted-network exposure. Port **3000** is not part of this app: open port **5191** directly.
+
+The app LaunchAgent opts in with `RESEARCH_LAN_ADDRESS=<lan-address>` and `RESEARCH_TRUSTED_SUBNET=<trusted-subnet>`. Without these settings the code remains loopback-only. The configured address must exist on the server; if DHCP changes it, use the server's loopback URL while updating the agreed LAN address and subnet in the LaunchAgent. It fails closed instead of falling back to an all-interface listener. Reserve this address in your router if an existing reservation does not already do so.
 
 ## Start, stop and restart
 
@@ -86,7 +88,7 @@ All automatic backups are currently on the same Mac. They protect against accide
 4. Change the `current` symlink to the new release and restart only `com.investmentresearch.app`. Verify `/api/health`, watchlist, saving and backup creation. The app and backup jobs both resolve `current`.
 5. To roll back the application, point `current` to the previous release and restart that same job. Leave the data directory untouched. Version 1.0.0 reads database/workspace schema 1 and refuses a newer database schema. If a future version migrates the schema, code rollback is allowed only if compatible; otherwise a separately approved backup recovery is required. Never silently downgrade the data.
 
-This is the first application release; there is no earlier installed application version to select yet.
+Release 1.0.0 is retained as the previous loopback-only version. To roll back from 1.0.1, stop the app job, restore its saved 1.0.0 plist from `service-config-backups/`, point `current` at `releases/1.0.0`, and bootstrap that app job. Data and the backup job remain in place. Remote access will cease when reverting to the loopback-only release.
 
 Use an atomic symlink replacement (`current.next` → `current`) so the active path is never partially copied. `scripts/install-local.py` is for first install only; it refuses to replace an existing release or LaunchAgent.
 
