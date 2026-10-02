@@ -14,6 +14,9 @@
     "agent fills forward EPS fields and leaves unrelated snapshot inputs intact",
     "EPS fill blocks mismatched currencies and preserves an existing field on cancelled replacement",
     "reviewed agent fields save through the normal snapshot workflow with nullable source date",
+    "a sector request runs discovery, company research and ranking, then renders the dashboard",
+    "dashboard drill-down opens the company research in the assistant with its snapshot",
+    "analysis history and inbox link to the dashboard; the mobile dashboard fits the viewport",
     "No browser JavaScript errors"
   ],
   "errors": [],

@@ -1,0 +1,309 @@
+{
+  "model": "gpt-6-astra",
+  "reasoningEffort": "medium",
+  "asOf": "2026-09-13",
+  "productionModified": false,
+  "snapshot": {
+    "status": "completed",
+    "error": null,
+    "stage": "Financial snapshot ready",
+    "usage": [
+      {
+        "stage": "1 of 2 · Collecting financial and market data",
+        "responseId": "resp_redacted",
+        "model": "gpt-6-astra",
+        "reasoningEffort": "medium",
+        "inputTokens": 53950,
+        "outputTokens": 5125
+      },
+      {
+        "stage": "2 of 2 · Normalizing the financial snapshot",
+        "responseId": "resp_redacted",
+        "model": "gpt-6-astra",
+        "reasoningEffort": "medium",
+        "inputTokens": 6154,
+        "outputTokens": 2140
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://www.sec.gov/Archives/edgar/data/1551182/000155118226000030/etn-20260630.htm",
+        "title": "etn-20260630",
+        "id": "S1"
+      },
+      {
+        "url": "https://stockanalysis.com/stocks/etn/statistics/",
+        "title": "Eaton Corporation (ETN) Statistics & Valuation",
+        "id": "S2"
+      },
+      {
+        "url": "https://www.eaton.com/content/dam/eaton/company/investor-relations/annual-report/eaton-2025-annual-report.pdf",
+        "title": "Eaton 2025 annual report",
+        "id": "S3"
+      },
+      {
+        "url": "https://www.sec.gov/Archives/edgar/data/1551182/000155118226000030/etn-20260630.htm?utm_source=openai",
+        "title": "etn-20260630",
+        "id": "S4"
+      },
+      {
+        "url": "https://chartexchange.com/symbol/nyse-etn/historical/?utm_source=openai",
+        "title": "ETN Historical Prices | ChartExchange",
+        "id": "S5"
+      },
+      {
+        "url": "https://www.eaton.com/content/dam/eaton/company/investor-relations/quarterly-earnings/filings/2026/q2/q2-2026-analyst-presentation.pdf",
+        "title": "2Q 2026 analyst presentation",
+        "id": "S6"
+      },
+      {
+        "url": "https://www.sec.gov/Archives/edgar/data/1551182/000155118226000007/etn-20251231.htm",
+        "title": "etn-20251231",
+        "id": "S7"
+      },
+      {
+        "url": "https://stockanalysis.com/stocks/etn/forecast/",
+        "title": "Eaton Corporation (ETN) Stock Forecast & Analyst Price Targets",
+        "id": "S8"
+      },
+      {
+        "url": "https://www.eaton.com/content/dam/eaton/company/investor-relations/quarterly-earnings/filings/2026/q2/q2-20265-earnings-complete.pdf",
+        "title": "2Q 2026 earnings complete",
+        "id": "S9"
+      },
+      {
+        "url": "https://www.eaton.com/sg/en-us/company/news-insights/news-releases/2026/eaton-reports-record-second-quarter-2026-results.html?utm_source=openai",
+        "title": "Eaton Reports Record Second Quarter 2026 Results, with Strong Organic Growth, Accelerating Orders and Backlog, and Raises Organic Growth Guidance",
+        "id": "S10"
+      }
+    ],
+    "snapshotResearch": "# Eaton — financial and market snapshot\n**As of September 13, 2026.** All monetary amounts below are in **full USD units**, except per-share figures. Source-rounded amounts retain their original precision.\n\n**Comparability limitation:** Published TTM figures were available, but the retrieved market-data page did not explicitly display their period-end date. They are identified separately from dated company filings; missing definitions and dates have not been inferred.\n\n## 1. Identity, listing and market data\n\n| Item | Verified observation | Date and source |\n|---|---|---|\n| Legal entity | **Eaton Corporation plc**, incorporated in Ireland | Q2 2026 Form 10-Q, filed July 31, 2026. [etn-20260630](https://www.sec.gov/Archives/edgar/data/1551182/000155118226000030/etn-20260630.htm) |\n| Primary listing | **NYSE: ETN**, ordinary shares, USD 0.01 par value—not an ADR. Other ADR/GDR listings were not verified. | Q2 2026 Form 10-Q, July 31, 2026. [etn-20260630](https://www.sec.gov/Archives/edgar/data/1551182/000155118226000030/etn-20260630.htm) |\n| Quote currency | **USD** | Market-data page, September 11, 2026 quote. [Eaton Corporation (ETN) Statistics & Valuation](https://stockanalysis.com/stocks/etn/statistics/) |\n| Reporting currency | **USD** | FY2025 annual report; financial statements dated February 26, 2026. [Eaton 2025 annual report](https://www.eaton.com/content/dam/eaton/company/investor-relations/annual-report/eaton-2025-annual-report.pdf) |\n| **Share price—regular-session reference** | **USD 425.37** | **September 11, 2026, 4:00 p.m. EDT**. Latest regular-session close retrieved, not a September 13 live price. [Eaton Corporation (ETN) Statistics & Valuation](https://stockanalysis.com/stocks/etn/statistics/) |\n| After-hours quote, separate | USD 426.48 | September 11, 2026, 7:59 p.m. EDT. [Eaton Corporation (ETN) Statistics & Valuation](https://stockanalysis.com/stocks/etn/statistics/) |\n| Basic shares outstanding | **388400000 ordinary shares**, as disclosed—not a weighted average | June 30, 2026; Form 10-Q filed July 31, 2026. [etn-20260630](https://www.sec.gov/Archives/edgar/data/1551182/000155118226000030/etn-20260630.htm?utm_source=openai) |\n| Diluted weighted-average shares | **389500000 ordinary shares** | Q2 2026, three months ended June 30, 2026; July 31 filing. [etn-20260630](https://www.sec.gov/Archives/edgar/data/1551182/000155118226000030/etn-20260630.htm) |\n| Market capitalization—source stated | **165210000000 USD** | Retrieved September 13, 2026; page quote dated September 11. Separate capitalization timestamp not displayed. [Eaton Corporation (ETN) Statistics & Valuation](https://stockanalysis.com/stocks/etn/statistics/) |\n| Enterprise value—source stated | **185840000000 USD** | Same source/date qualification; vendor definition, not app-calculated. [Eaton Corporation (ETN) Statistics & Valuation](https://stockanalysis.com/stocks/etn/statistics/) |\n\n**Price discrepancy:** ChartExchange displayed USD 425.32 at **3:59:56 p.m. EDT on September 11, 2026**. The USD 425.37 reference above uses Stock Analysis’s later, explicitly timestamped 4:00 p.m. close. [ETN Historical Prices | ChartExchange](https://chartexchange.com/symbol/nyse-etn/historical/?utm_source=openai)\n\n## 2. Latest financials\n\n### Published TTM figures — secondary-source observations\n\n**Period:** source-labelled “last 12 months”; **period-end date unavailable in the retrieved view**. Retrieved September 13, 2026. These are vendor-presented historical figures, **not analyst forecasts**. They should not be treated as a fully date-aligned peer-comparison dataset. The financial-data interface offers standardized/as-reported views; the retrieved figures do not establish an audited company-issued TTM statement. [Eaton Corporation (ETN) Statistics & Valuation](https://stockanalysis.com/stocks/etn/statistics/)\n\n| Metric | Full USD units, except EPS | Basis / qualification | Dated citation |\n|---|---:|---|---|\n| Revenue | 30030000000 | Vendor-published, rounded TTM | Retrieved September 13, 2026. [Eaton Corporation (ETN) Statistics & Valuation](https://stockanalysis.com/stocks/etn/statistics/) |\n| EBITDA | 6640000000 | Non-GAAP/vendor-defined; not verified as Eaton-adjusted EBITDA | Retrieved September 13, 2026. [Eaton Corporation (ETN) Statistics & Valuation](https://stockanalysis.com/stocks/etn/statistics/) |\n| EBIT / operating income | 5460000000 | Vendor reports the same amount for both; standardized presentation | Retrieved September 13, 2026. [Eaton Corporation (ETN) Statistics & Valuation](https://stockanalysis.com/stocks/etn/statistics/) |\n| Net income attributable to shareholders | **Unavailable on a verified attribution basis** | Vendor “net income” is 3830000000, but attribution is not explicit in the retrieved view | Retrieved September 13, 2026. [Eaton Corporation (ETN) Statistics & Valuation](https://stockanalysis.com/stocks/etn/statistics/) |\n| Diluted EPS | **Unavailable on a verified diluted basis** | Vendor “EPS” is USD 9.82; the retrieved summary does not explicitly label it diluted | Retrieved September 13, 2026. [Eaton Corporation (ETN) Statistics & Valuation](https://stockanalysis.com/stocks/etn/statistics/) |\n| Operating cash flow | 4950000000 | Published, rounded TTM; not independently assembled | Retrieved September 13, 2026. [Eaton Corporation (ETN) Statistics & Valuation](https://stockanalysis.com/stocks/etn/statistics/) |\n| Capital expenditure | -1020000000 | Published cash-outflow sign; rounded TTM | Retrieved September 13, 2026. [Eaton Corporation (ETN) Statistics & Valuation](https://stockanalysis.com/stocks/etn/statistics/) |\n| Free cash flow | 3930000000 | Non-GAAP/vendor-published, rounded TTM | Retrieved September 13, 2026. [Eaton Corporation (ETN) Statistics & Valuation](https://stockanalysis.com/stocks/etn/statistics/) |\n\n### Latest dated balance-sheet evidence\n\n**Balance-sheet date: June 30, 2026; unaudited US GAAP interim filing, July 31, 2026.** [etn-20260630](https://www.sec.gov/Archives/edgar/data/1551182/000155118226000030/etn-20260630.htm)\n\n| Metric | Full USD units | Qualification and source |\n|---|---:|---|\n| Cash—company balance-sheet line | **483000000** | Filing labels this line **“Cash,”** rather than “cash and cash equivalents.” Short-term investments excluded. [etn-20260630](https://www.sec.gov/Archives/edgar/data/1551182/000155118226000030/etn-20260630.htm) |\n| Short-term investments, separately | 212000000 | June 30, 2026; not added to the cash field. [etn-20260630](https://www.sec.gov/Archives/edgar/data/1551182/000155118226000030/etn-20260630.htm) |\n| Total debt—requested comparable definition | **Unavailable** | A complete primary-source debt total or all required debt components were not verified in the retrieved evidence. |\n| Short-term debt—verified component | 2091000000 | June 30, 2026. [etn-20260630](https://www.sec.gov/Archives/edgar/data/1551182/000155118226000030/etn-20260630.htm) |\n| Current portion of long-term debt—verified component | 11000000 | June 30, 2026. [etn-20260630](https://www.sec.gov/Archives/edgar/data/1551182/000155118226000030/etn-20260630.htm) |\n\n**Definition conflicts:** The vendor reports “cash and cash equivalents” of **695000000 USD** and total debt of **21330000000 USD** on its page retrieved September 13, 2026. Its cash presentation combines the company’s separately reported cash and short-term investments. Its debt treatment, including leases, was not verified, so that debt figure is **not substituted** for the requested balance-sheet definition. [Eaton Corporation (ETN) Statistics & Valuation](https://stockanalysis.com/stocks/etn/statistics/)\n\n## 3. Latest-period growth\n\n**Q2 2026 versus Q2 2025; periods ended June 30.** Figures below are company-reported, not calculated here.\n\n| Metric | Observation | Publication date and source |\n|---|---|---|\n| Revenue growth—reported | **21%**, with revenue of **8531000000 USD** versus **7028000000 USD** | July 31, 2026; Form 10-Q. [etn-20260630](https://www.sec.gov/Archives/edgar/data/1551182/000155118226000030/etn-20260630.htm) |\n| Organic revenue growth | **14%**; acquisitions contributed 7%; presentation reports 0% foreign-exchange contribution | July 31, 2026; earnings presentation. [2Q 2026 analyst presentation](https://www.eaton.com/content/dam/eaton/company/investor-relations/quarterly-earnings/filings/2026/q2/q2-2026-analyst-presentation.pdf) |\n| Adjusted EPS growth—non-GAAP | **7%**; USD **3.15** versus USD **2.95** | July 31, 2026; earnings presentation. [2Q 2026 analyst presentation](https://www.eaton.com/content/dam/eaton/company/investor-relations/quarterly-earnings/filings/2026/q2/q2-2026-analyst-presentation.pdf) |\n| GAAP diluted EPS comparison | USD **2.11** versus USD **2.51**. Published percentage growth not verified; no percentage calculated. | July 31, 2026; Form 10-Q. [etn-20260630](https://www.sec.gov/Archives/edgar/data/1551182/000155118226000030/etn-20260630.htm) |\n\n## 4. Fiscal-year history and audited reference\n\n**Fiscal years end December 31.** Revenue, shareholder-attributable net income and diluted EPS are **US GAAP**. Free cash flow is **non-GAAP**. Cash-flow amounts marked “rounded” come from the annual-report narrative, not reconstructed calculations. FY2025 financial statements are dated **February 26, 2026**. [Eaton 2025 annual report](https://www.eaton.com/content/dam/eaton/company/investor-relations/annual-report/eaton-2025-annual-report.pdf)\n\n| Metric | FY2025: December 31, 2025 | FY2024: December 31, 2024 | FY2023: December 31, 2023 | Source/date |\n|---|---:|---:|---:|---|\n| Revenue, USD | 27448000000 | 24878000000 | 23196000000 | FY2025 Form 10-K, February 26, 2026. [etn-20251231](https://www.sec.gov/Archives/edgar/data/1551182/000155118226000007/etn-20251231.htm) |\n| EBITDA | Unavailable | Unavailable | Unavailable | No verified consolidated annual EBITDA figure captured |\n| EBIT / consolidated operating income | Unavailable | Unavailable | Unavailable | Not reconstructed from expense lines |\n| Net income attributable to ordinary shareholders, USD | 4087000000 | 3794000000 | 3218000000 | FY2025 Form 10-K, February 26, 2026. [etn-20251231](https://www.sec.gov/Archives/edgar/data/1551182/000155118226000007/etn-20251231.htm) |\n| Diluted EPS, USD/share | 10.45 | 9.50 | 8.02 | FY2025 Form 10-K, February 26, 2026. [etn-20251231](https://www.sec.gov/Archives/edgar/data/1551182/000155118226000007/etn-20251231.htm) |\n| Operating cash flow, USD—rounded | 4500000000 | 4300000000 | Unavailable | FY2025 annual-report narrative; publication day not verified, retrieved September 13, 2026. [Eaton 2025 annual report](https://www.eaton.com/content/dam/eaton/company/investor-relations/annual-report/eaton-2025-annual-report.pdf) |\n| Capital expenditure, USD—positive spend, rounded | 900000000 | 800000000 | Unavailable | Same annual-report narrative/date qualification. [Eaton 2025 annual report](https://www.eaton.com/content/dam/eaton/company/investor-relations/annual-report/eaton-2025-annual-report.pdf) |\n| Free cash flow, USD—rounded | 3600000000 | 3500000000 | Unavailable | Same annual-report narrative/date qualification. [Eaton 2025 annual report](https://www.eaton.com/content/dam/eaton/company/investor-relations/annual-report/eaton-2025-annual-report.pdf) |\n\n## 5. Published analyst consensus — estimates, not guidance\n\n**Source:** S&P Global consensus displayed by Stock Analysis. **Last updated September 7, 2026; last checked by the site September 8, 2026.** Fiscal year is January–December. EPS accounting/adjustment basis is **not explicitly specified in the retrieved forecast**, so do not directly compare it with GAAP historical EPS. [Eaton Corporation (ETN) Stock Forecast & Analyst Price Targets](https://stockanalysis.com/stocks/etn/forecast/)\n\n| Estimate | Fiscal period / horizon | Value | Dated citation |\n|---|---|---:|---|\n| Forward revenue | FY2026, ending December 31, 2026 | **32640000000 USD** | September 7, 2026 update. [Eaton Corporation (ETN) Stock Forecast & Analyst Price Targets](https://stockanalysis.com/stocks/etn/forecast/) |\n| Forward EPS | FY2026, ending December 31, 2026 | **USD 13.55/share** | September 7, 2026 update. [Eaton Corporation (ETN) Stock Forecast & Analyst Price Targets](https://stockanalysis.com/stocks/etn/forecast/) |\n| Forward revenue | FY2027, ending December 31, 2027 | **36570000000 USD** | September 7, 2026 update; public “next year” summary. [Eaton Corporation (ETN) Stock Forecast & Analyst Price Targets](https://stockanalysis.com/stocks/etn/forecast/) |\n| Forward EPS | FY2027, ending December 31, 2027 | **USD 16.13/share** | September 7, 2026 update; public “next year” summary. [Eaton Corporation (ETN) Stock Forecast & Analyst Price Targets](https://stockanalysis.com/stocks/etn/forecast/) |\n| Mean analyst price target | One-year horizon; 27 analysts | **USD 478.17/share** | September 7, 2026 page update. This is third-party consensus, not an independently calculated target. [Eaton Corporation (ETN) Stock Forecast & Analyst Price Targets](https://stockanalysis.com/stocks/etn/forecast/) |\n\nNo management guidance has been substituted for consensus.\n\n## 6. Sector-specific operating metrics\n\nAll are **company-reported observations**, published **July 31, 2026** with Q2 results—not financial-statement line items.\n\n| Operating metric | Value / units | Measurement period | Source |\n|---|---:|---|---|\n| Electrical Americas orders growth | **41%** | Twelve-month rolling average, Q2 2026 versus prior-year comparison | [2Q 2026 earnings complete](https://www.eaton.com/content/dam/eaton/company/investor-relations/quarterly-earnings/filings/2026/q2/q2-20265-earnings-complete.pdf) |\n| Electrical Global orders growth | **33%** | Twelve-month rolling average, Q2 2026 versus prior-year comparison | [2Q 2026 earnings complete](https://www.eaton.com/content/dam/eaton/company/investor-relations/quarterly-earnings/filings/2026/q2/q2-20265-earnings-complete.pdf) |\n| Aerospace orders growth | **17%** | Twelve-month rolling average, Q2 2026 versus prior-year comparison | [2Q 2026 earnings complete](https://www.eaton.com/content/dam/eaton/company/investor-relations/quarterly-earnings/filings/2026/q2/q2-20265-earnings-complete.pdf) |\n| Electrical sector total backlog growth | **43% year over year** | Q2 2026 reporting point | [Eaton Reports Record Second Quarter 2026 Results, with Strong Organic Growth, Accelerating Orders and Backlog, and Raises Organic Growth Guidance](https://www.eaton.com/sg/en-us/company/news-insights/news-releases/2026/eaton-reports-record-second-quarter-2026-results.html?utm_source=openai) |\n| Aerospace total backlog growth | **28% year over year** | Q2 2026 reporting point | [Eaton Reports Record Second Quarter 2026 Results, with Strong Organic Growth, Accelerating Orders and Backlog, and Raises Organic Growth Guidance](https://www.eaton.com/sg/en-us/company/news-insights/news-releases/2026/eaton-reports-record-second-quarter-2026-results.html?utm_source=openai) |\n\n**Remaining evidence gaps:** an explicitly dated TTM statement, verified consolidated debt excluding operating leases, precise annual cash-flow figures, consolidated annual EBITDA/EBIT, and an explicit consensus EPS basis. The retrieved sources provide useful observations, but do not resolve those fields sufficiently for a fully standardized peer comparison.",
+    "result": {
+      "identity": {
+        "name": "Eaton Corporation plc",
+        "ticker": "ETN",
+        "exchange": "NYSE",
+        "listingCountry": null,
+        "quoteCurrency": "USD",
+        "reportingCurrency": "USD",
+        "fiscalYearEnd": "12-31",
+        "securityType": "Common",
+        "sourceIds": [
+          "S1",
+          "S2",
+          "S3"
+        ]
+      },
+      "price": {
+        "value": 425.37,
+        "currency": "USD",
+        "asOfDate": "2026-09-11",
+        "asOfTime": "16:00:00 EDT",
+        "sourceId": "S2",
+        "ageDays": 2
+      },
+      "shares": {
+        "basicOutstanding": 388400000,
+        "dilutedOutstanding": 389500000,
+        "asOfDate": "2026-06-30",
+        "basis": "Basic: ordinary shares outstanding at June 30, 2026, not weighted average. Diluted: weighted-average ordinary shares for Q2 2026, three months ended June 30, 2026, not point-in-time outstanding shares. Unaudited US GAAP interim filing.",
+        "sourceId": "S4"
+      },
+      "marketCap": {
+        "value": 165210000000,
+        "currency": "USD",
+        "asOfDate": null,
+        "sourceId": "S2",
+        "derived": false,
+        "derivedValue": 165213708000
+      },
+      "enterpriseValue": {
+        "value": 185840000000,
+        "currency": "USD",
+        "asOfDate": null,
+        "sourceId": "S2",
+        "derived": false,
+        "derivedValue": null
+      },
+      "financials": {
+        "periodLabel": "Last 12 months; period end unspecified",
+        "periodType": "TTM",
+        "periodEndDate": null,
+        "basis": "Vendor-published rounded TTM observations, not an audited company-issued TTM statement. EBITDA and free cash flow are non-GAAP/vendor-defined; EBIT is standardized vendor operating income. Cash is separately dated June 30, 2026, from an unaudited US GAAP balance sheet.",
+        "currency": "USD",
+        "sourceIds": [
+          "S2",
+          "S1"
+        ],
+        "periodAgeDays": null,
+        "scaledUnitsSuspected": false,
+        "revenue": 30030000000,
+        "ebitda": 6640000000,
+        "ebit": 5460000000,
+        "netIncome": null,
+        "dilutedEPS": null,
+        "operatingCashFlow": 4950000000,
+        "capitalExpenditure": -1020000000,
+        "freeCashFlow": 3930000000,
+        "totalDebt": null,
+        "cashAndEquivalents": 483000000,
+        "freeCashFlowDerived": false
+      },
+      "growth": {
+        "revenueGrowthPct": 21,
+        "epsGrowthPct": 7,
+        "periodLabel": "Q2 2026 versus Q2 2025, periods ended June 30; reported revenue growth and non-GAAP adjusted EPS growth",
+        "sourceIds": [
+          "S1",
+          "S6"
+        ]
+      },
+      "history": [
+        {
+          "periodLabel": "FY2023",
+          "periodEndDate": "2023-12-31",
+          "revenue": 23196000000,
+          "ebitda": null,
+          "netIncome": 3218000000,
+          "freeCashFlow": null,
+          "sourceIds": [
+            "S7"
+          ]
+        },
+        {
+          "periodLabel": "FY2024",
+          "periodEndDate": "2024-12-31",
+          "revenue": 24878000000,
+          "ebitda": null,
+          "netIncome": 3794000000,
+          "freeCashFlow": 3500000000,
+          "sourceIds": [
+            "S7",
+            "S3"
+          ]
+        },
+        {
+          "periodLabel": "FY2025",
+          "periodEndDate": "2025-12-31",
+          "revenue": 27448000000,
+          "ebitda": null,
+          "netIncome": 4087000000,
+          "freeCashFlow": 3600000000,
+          "sourceIds": [
+            "S7",
+            "S3"
+          ]
+        }
+      ],
+      "consensus": {
+        "forwardEPS": 13.55,
+        "forwardEPSPeriod": "FY2026 ending 2026-12-31",
+        "forwardRevenue": 32640000000,
+        "forwardRevenuePeriod": "FY2026 ending 2026-12-31",
+        "targetPrice": 478.17,
+        "currency": "USD",
+        "asOfDate": "2026-09-07",
+        "sourceId": "S8",
+        "ageDays": 6
+      },
+      "operatingMetrics": [
+        {
+          "name": "Electrical Americas orders growth",
+          "value": 41,
+          "unit": "%",
+          "periodLabel": "Twelve-month rolling average, Q2 2026 versus prior-year comparison",
+          "sourceId": "S9"
+        },
+        {
+          "name": "Electrical Global orders growth",
+          "value": 33,
+          "unit": "%",
+          "periodLabel": "Twelve-month rolling average, Q2 2026 versus prior-year comparison",
+          "sourceId": "S9"
+        },
+        {
+          "name": "Aerospace orders growth",
+          "value": 17,
+          "unit": "%",
+          "periodLabel": "Twelve-month rolling average, Q2 2026 versus prior-year comparison",
+          "sourceId": "S9"
+        },
+        {
+          "name": "Electrical sector total backlog growth",
+          "value": 43,
+          "unit": "%",
+          "periodLabel": "Q2 2026 reporting point, year over year",
+          "sourceId": "S10"
+        },
+        {
+          "name": "Aerospace total backlog growth",
+          "value": 28,
+          "unit": "%",
+          "periodLabel": "Q2 2026 reporting point, year over year",
+          "sourceId": "S10"
+        }
+      ],
+      "derived": {
+        "netDebt": null,
+        "marketCapDerived": 165213708000,
+        "marketCapBasis": "basic shares outstanding",
+        "enterpriseValueDerived": null,
+        "margins": {
+          "ebitda": 22.111222111222112,
+          "ebit": 18.181818181818183,
+          "net": null,
+          "fcf": 13.086913086913087
+        },
+        "multiples": {
+          "peTrailing": null,
+          "peForward": 31.39261992619926,
+          "evEbitda": 27.987951807228917,
+          "evEbit": 34.03663003663004,
+          "evRevenue": 6.1884781884781885,
+          "fcfYield": 2.378790630107136,
+          "netDebtEbitda": null,
+          "priceToTarget": 12.412723041117157
+        },
+        "fcfYieldBasis": "Last 12 months; period end unspecified free cash flow",
+        "historicalGrowth": {
+          "revenueCagrPct": 8.77993688197385,
+          "years": 2,
+          "from": "FY2023",
+          "to": "FY2025"
+        },
+        "revenueGrowthPct": 21,
+        "revenueGrowthSource": "reported"
+      },
+      "quality": {
+        "warnings": [
+          "Financial period end date is unknown; period consistency with peers cannot be verified."
+        ],
+        "missing": [
+          "Explicit listing country",
+          "Separate market capitalization and enterprise value timestamps",
+          "Explicit TTM period-end date",
+          "Verified TTM shareholder-attributable net income",
+          "Explicitly diluted TTM EPS",
+          "Verified consolidated debt under the requested definition and complete debt components",
+          "Point-in-time diluted shares outstanding; only a quarterly weighted average is available",
+          "Consolidated annual EBITDA and EBIT",
+          "Precise unrounded annual cash-flow figures",
+          "FY2023 operating cash flow, capital expenditure and free cash flow",
+          "Published GAAP diluted EPS growth percentage",
+          "Explicit consensus EPS accounting or adjustment basis",
+          "Net debt"
+        ],
+        "priceAgeDays": 2,
+        "periodAgeDays": null,
+        "currencyMismatch": false,
+        "scaledUnitsSuspected": false,
+        "comparable": true,
+        "shareBasisUsed": "basic shares outstanding",
+        "freshPrice": true,
+        "hasValuationMultiple": true
+      },
+      "notes": "Research date: 2026-09-13. All monetary fields use full USD units, except per-share amounts. S2 market capitalization, enterprise value and TTM data were retrieved 2026-09-13; separate capitalization timestamps and the TTM period end were not displayed. The price is the 2026-09-11 regular-session close, not a live research-date quote. S5 reported USD 425.32 at 15:59:56 EDT that day; S2's later 16:00 close was selected. S2 separately reported an after-hours quote of USD 426.48 at 19:59 EDT. S2's TTM net income of USD 3830000000 lacks verified shareholder attribution, and its EPS of USD 9.82 is not explicitly diluted; those standardized fields remain null. The cash field contains S1's June 30, 2026 line labelled 'Cash', excluding USD 212000000 of separately reported short-term investments. S2's USD 695000000 cash presentation combines these categories. S2's USD 21330000000 debt figure has unverified lease treatment and was not substituted. S1 verifies June 30 short-term debt of USD 2091000000 and current long-term debt of USD 11000000, but the remaining required component was unavailable; no debt total was calculated. S1 and S4 are versions of the same July 31, 2026 filing supporting the share disclosures. Annual history revenue and shareholder-attributable net income are US GAAP; free cash flow is source-stated, rounded and non-GAAP. FY2025 financial statements are dated 2026-02-26; S3's narrative publication day was not verified. Growth EPS is adjusted, not GAAP diluted EPS. S8 consensus is third-party S&P Global data updated 2026-09-07, with EPS accounting basis unspecified; the target is a one-year mean across 27 analysts. S8 also states FY2027 revenue of USD 36570000000 and EPS of USD 16.13 for the year ending 2027-12-31. Sector KPIs were published 2026-07-31."
+    }
+  },
+  "discovery": null
+}

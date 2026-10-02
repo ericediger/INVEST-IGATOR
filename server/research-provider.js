@@ -57,7 +57,7 @@ export class OpenAIResearchProvider {
     this.key = key; this.model = model; this.reasoningEffort = reasoningEffort; this.fetcher = fetcher;
   }
   configured() { return !!this.key(); }
-  async request({instructions, input, search = false, schema = null, signal}) {
+  async request({instructions, input, search = false, schema = null, schemaName = 'investment_assessment', maxToolCalls = 4, signal}) {
     const key = this.key();
     if (!key) fail('Connect an OpenAI API key on the server to run research.', 503);
     const timeout = AbortSignal.timeout(240000);
@@ -70,8 +70,8 @@ export class OpenAIResearchProvider {
       const response = await this.fetcher('https://api.openai.com/v1/responses', {
         method: 'POST', headers: {'Content-Type': 'application/json', Authorization: `Bearer ${key}`}, signal: controller.signal,
         body: JSON.stringify({model: this.model, reasoning: {effort: this.reasoningEffort}, store: false, instructions, input, max_output_tokens: 6500,
-          ...(search ? {tools: [{type: 'web_search'}], tool_choice: 'required', max_tool_calls: 4} : {}),
-          ...(schema ? {text: {format: {type: 'json_schema', name: 'investment_assessment', strict: true, schema}}} : {})})
+          ...(search ? {tools: [{type: 'web_search'}], tool_choice: 'required', max_tool_calls: Math.min(8, Math.max(1, maxToolCalls))} : {}),
+          ...(schema ? {text: {format: {type: 'json_schema', name: schemaName, strict: true, schema}}} : {})})
       });
       if (!response.ok) {
         const messages = {401: 'The OpenAI API key was rejected. Update the server key.', 403: 'This API project cannot access the requested model or tools.', 404: 'The requested research model is unavailable to this API project. Check model access.', 429: 'OpenAI usage or rate limit reached. Check API billing and limits before trying again.'};

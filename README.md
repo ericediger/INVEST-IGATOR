@@ -1,10 +1,14 @@
-# Investment Research — local MVP 1.2.0
+# Investment Research — local MVP 1.3.0
 
 Open **http://<lan-address>:5191** from your trusted home network, or **http://127.0.0.1:5191** on the server Mac. The watchlist is seeded with ETN, VRT, NVT, APH, PWR, FIX and ANET. Financial values start blank. No household account data was imported.
 
 ## AI research
 
 Open **Research assistant** in the top bar for company research, a contrary-evidence review, recommendations, and persistent follow-up questions. Open **AI research** for the research inbox. Connect a server-side OpenAI API key using **Connect AI.command** in the installed app folder. New AI functionality is documented in `docs/AI-RESEARCH.md`, including usage limits, data sent externally, evidence review, and recovery. Live research requires a funded API project.
+
+## Sector analysis
+
+Open **Sector analysis** in navigation, enter a sector such as “European defense” or “semiconductor equipment”, optionally the companies you already know and any criteria, and choose **Start analysis**. The server discovers the listed companies (your named companies are always included and act as a starting point), adds missing ones to the watchlist with provenance, collects a dated financial and market snapshot for each, researches and challenges each company, then ranks them. The dashboard shows the ranked recommendations with thesis, valuation, catalysts, risks, invalidation triggers, confidence and data limitations, side-by-side financial snapshots, app-computed valuation multiples, growth and margins, operating metrics, sources and data-quality notes, with drill-down to the full research for each company. One analysis counts as one daily run but makes up to 3 + 5 × companies provider requests; the estimate is shown before you start. In the research assistant, **Research & recommend** now collects the same snapshot first by default, and **Financial snapshot only** collects it alone. See `docs/AI-RESEARCH.md` for the integrity rules (currency, period, share basis, freshness) and recommendation gating.
 
 ## Forward EPS research
 
@@ -102,6 +106,6 @@ Use an atomic symlink replacement (`current.next` → `current`) so the active p
 
 ## Scope and limits
 
-Financial snapshots remain manual. Optional AI company research and recommendations use paid OpenAI API requests and web search after a server key is configured. No live quote feed, automatic consensus import, correlations, actual portfolio/holdings/performance, broker connections, public sharing or notifications. Review dates and triggers are displayed, not pushed as alerts. Currency and listing start unknown; users must verify them. Manual source links are stored for provenance; AI runs use web search and retain returned citations. Source provenance checks do not establish factual correctness. Evidence is plain text, not rich HTML. Arithmetic uses finite JavaScript numbers with no intermediate rounding; display rounds to four fractional digits. Single-household workspace, modest concurrency, 4 MB workspace / 5 MB request/import limit and whole-workspace conflict checks. Daily age calculations use America/New_York calendar dates.
+Manual financial snapshots remain the basis for valuation scenarios and decisions; AI-collected financial snapshots are cited research records with app-computed derived values, not a market-data feed. Optional AI company research, sector analysis and recommendations use paid OpenAI API requests and web search after a server key is configured. No live quote feed, correlations, actual portfolio/holdings/performance, broker connections, public sharing or notifications. Review dates and triggers are displayed, not pushed as alerts. Currency and listing start unknown; users must verify them. Manual source links are stored for provenance; AI runs use web search and retain returned citations. Source provenance checks do not establish factual correctness. Evidence is plain text, not rich HTML. Arithmetic uses finite JavaScript numbers with no intermediate rounding; display rounds to four fractional digits. Single-household workspace, modest concurrency, 4 MB workspace / 5 MB request/import limit and whole-workspace conflict checks. Daily age calculations use America/New_York calendar dates.
 
 See `docs/API.md`, `docs/ARCHITECTURE.md` and `TEST-RESULTS.md` for engineering details and actual verification.

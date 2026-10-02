@@ -61,3 +61,18 @@ All routes inherit the existing Host, peer-network, Origin and JSON mutation pro
 Runs progress queued → running → completed/failed/cancelled. Queued/running runs found on service restart become interrupted; retry is a new, user-started run. Research notes and financial workspace do not change during provider work.
 
 Forward EPS runs return a persisted `epsDraft` with nullable fields, validated source reference, missing fields and a `canFill` flag. They do not mutate snapshots. The user applies the draft to the form and submits the existing `snapshot.add` action.
+
+## Sector analysis and financial snapshots (1.3.0)
+
+All routes inherit the existing Host, peer-network, Origin and JSON mutation protections.
+
+- `POST /api/research/runs` accepts two additional forms. `kind: "snapshot"` collects a standardized financial and market snapshot for the company (2 provider requests) and returns it as `snapshot` on the run. `kind: "review"` accepts `withSnapshot: true` to collect the snapshot first and pass it to the three review stages (5 provider requests). Assessments now include `catalysts` (cited paragraphs).
+- `POST /api/research/analyses`: `{sector, seedCompanies?: string[], criteria?: string, maxCompanies?: 2–10}` → 202 and a persisted analysis. Counts as one daily run. Rejected while another analysis is queued or running (409), when the daily limit is reached (429), or without a server key (503).
+- `GET /api/research/analyses`: newest first; sector, status, stage, companies with ratings, top pick.
+- `GET /api/research/analyses/:id`: the complete analysis document: `input`, `mandate`, `phase` (`discovery` → `companies` → `comparison`), `status` (`queued`/`running`/`completed`/`failed`/`cancelled`/`interrupted`), live `stage`, `discovery` (sector definition, excluded candidates, unresolved seeds, sources), `companies[]` (each with `companyId`, `runId`, `status`, `report`, `snapshot`, `sources`, `error`), `comparison` (`registry` of shared sources `A1…`, `caveats`, `report` with `ranking[]`), `runs[]` summaries, aggregated `usage` and `progress`.
+- `POST /api/research/analyses/:id/cancel`: `{}`. Cancels queued/running child runs; completed company research is kept.
+- `GET /api/research/runs` inbox rows now include `analysisId`; sector-scoped runs (`discovery`, `comparison`) have `companyId: null` and use the sector name as `ticker`.
+- `POST /api/research/settings` accepts `maxCompanies` (2–10, default 6).
+- `GET /api/research/export` archive is `schemaVersion: 2` and adds `analyses`.
+
+Financial snapshot document (`snapshot` on a run, `companies[].snapshot` on an analysis): `identity` (name, ticker, exchange, listing country, quote currency, reporting currency, fiscal year end, security type), `price` (value, currency, as-of date/time, source, age in days), `shares` (basic/diluted outstanding, date, basis), `marketCap` and `enterpriseValue` (sourced or `derived: true`), `financials` (period label/type/end date, accounting basis, currency, revenue, EBITDA, EBIT, net income, diluted EPS, operating cash flow, capex, free cash flow, total debt, cash), `growth`, `history[]`, `consensus` (forward EPS/revenue with periods, target price, date), `operatingMetrics[]`, `derived` (net debt, market cap/EV cross-checks, margins, multiples, historical growth) and `quality` (warnings, missing, price/period age, currency mismatch, scaled-unit suspicion, comparability, share basis used). Monetary values are full currency units. Only figures with a valid citation from the run's source registry are kept; everything in `derived` is computed by the server, never by the model.

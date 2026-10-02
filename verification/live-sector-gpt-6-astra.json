@@ -1,0 +1,258 @@
+{
+  "model": "gpt-6-astra",
+  "reasoningEffort": "medium",
+  "asOf": "2026-09-13",
+  "productionModified": false,
+  "snapshot": {
+    "status": "failed",
+    "error": "operatingMetrics: Array must contain at most 12 element(s)",
+    "stage": "Research did not finish",
+    "usage": [
+      {
+        "stage": "1 of 2 · Collecting financial and market data",
+        "responseId": "resp_redacted",
+        "model": "gpt-6-astra",
+        "reasoningEffort": "medium",
+        "inputTokens": 58339,
+        "outputTokens": 5337
+      },
+      {
+        "stage": "2 of 2 · Normalizing the financial snapshot",
+        "responseId": "resp_redacted",
+        "model": "gpt-6-astra",
+        "reasoningEffort": "medium",
+        "inputTokens": 5467,
+        "outputTokens": 3594
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://www.sec.gov/Archives/edgar/data/1551182/000155118226000030/etn-20260630.htm",
+        "title": "etn-20260630",
+        "id": "S1"
+      },
+      {
+        "url": "https://stockanalysis.com/stocks/etn/",
+        "title": "Eaton Corporation (ETN) Stock Price & Overview",
+        "id": "S2"
+      },
+      {
+        "url": "https://www.eaton.com/content/dam/eaton/company/investor-relations/annual-report/eaton-2025-annual-report.pdf",
+        "title": "Eaton 2025 annual report",
+        "id": "S3"
+      },
+      {
+        "url": "https://stockanalysis.com/stocks/etn/statistics/",
+        "title": "Eaton Corporation (ETN) Statistics & Valuation",
+        "id": "S4"
+      },
+      {
+        "url": "https://chartexchange.com/symbol/nyse-etn/historical/?utm_source=openai",
+        "title": "ETN Historical Prices | ChartExchange",
+        "id": "S5"
+      },
+      {
+        "url": "https://stockanalysis.com/stocks/etn/financials/",
+        "title": "Eaton Corporation (ETN) Financials Overview",
+        "id": "S6"
+      },
+      {
+        "url": "https://stockanalysis.com/stocks/etn/financials/cash-flow-statement/",
+        "title": "Eaton Corporation (ETN) Cash Flow Statement",
+        "id": "S7"
+      },
+      {
+        "url": "https://www.sec.gov/Archives/edgar/data/1551182/000155118226000027/etn06302026exhibit99.htm",
+        "title": "www.sec.gov",
+        "id": "S8"
+      },
+      {
+        "url": "https://stockanalysis.com/stocks/etn/forecast/",
+        "title": "Eaton Corporation (ETN) Stock Forecast & Analyst Price Targets",
+        "id": "S9"
+      }
+    ],
+    "result": null
+  },
+  "discovery": {
+    "status": "completed",
+    "error": null,
+    "stage": "5 companies selected",
+    "usage": [
+      {
+        "stage": "1 of 2 · Searching the sector for listed companies",
+        "responseId": "resp_redacted",
+        "model": "gpt-6-astra",
+        "reasoningEffort": "medium",
+        "inputTokens": 55170,
+        "outputTokens": 2548
+      },
+      {
+        "stage": "2 of 2 · Selecting the companies to analyze",
+        "responseId": "resp_redacted",
+        "model": "gpt-6-astra",
+        "reasoningEffort": "medium",
+        "inputTokens": 3057,
+        "outputTokens": 1214
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://www.rheinmetall.com/en/investor-relations/share/basic-information?utm_source=openai",
+        "title": "Basic information on Rheinmetall share – Investor Relations | Rheinmetall",
+        "id": "S1"
+      },
+      {
+        "url": "https://ir.rheinmetall.com/media/document/6d4637c5-eafa-47cc-afe2-b8810256e0cd/assets/Rheinmetall_AG_2026_Investor_Presentation_January.pdf?utm_source=openai",
+        "title": "PowerPoint-Präsentation",
+        "id": "S2"
+      },
+      {
+        "url": "https://www.fidelity.co.uk/factsheet-data/factsheet/DE0007030009-rheinmetall-ag/key-statistics?utm_source=openai",
+        "title": "Key Statistics | RHM | DE0007030009 | Fidelity",
+        "id": "S3"
+      },
+      {
+        "url": "https://www.baesystems.com/investors/shareholder-faqs?utm_source=openai",
+        "title": "Investor FAQs",
+        "id": "S4"
+      },
+      {
+        "url": "https://www.baesystems.com/dam/jcr%3A430d3195-c990-4bd5-ac85-ec5588380dbf?utm_source=openai",
+        "title": "FY 2025 - Preliminary Results Announcements-2026-02-17-16-45",
+        "id": "S5"
+      },
+      {
+        "url": "https://www.londonstockexchange.com/stock/BA./bae-systems-plc/company-page?utm_source=openai",
+        "title": "BAE SYSTEMS PLC BA. Stock | London Stock Exchange",
+        "id": "S6"
+      },
+      {
+        "url": "https://simplywall.st/stocks/se/capital-goods/sto-saab-b/saab-shares/information?utm_source=openai",
+        "title": "Saab AB (publ) (SAAB B) Company Information - Simply Wall St",
+        "id": "S7"
+      },
+      {
+        "url": "https://www.nasdaq.com/fi/european-market-activity/shares/saab-b?id=SSE1051&utm_source=openai",
+        "title": "SAAB B (SAAB B) Summary | Nasdaq",
+        "id": "S8"
+      },
+      {
+        "url": "https://www.saab.com/globalassets/corporate/investor-relations/annual-report/2026/saab-ar25-eng.pdf?utm_source=openai",
+        "title": "The share\n\nThe Saab share is listed on Nasdaq Stoc",
+        "id": "S9"
+      },
+      {
+        "url": "https://investors.hensoldt.net/share?utm_source=openai",
+        "title": "Share Information | HENSOLDT AG",
+        "id": "S10"
+      },
+      {
+        "url": "https://www.hensoldt.net/?utm_source=openai",
+        "title": "Home | HENSOLDT",
+        "id": "S11"
+      },
+      {
+        "url": "https://www.fidelity.co.uk/factsheet-data/factsheet/DE000HAG0005-hensoldt-ag/key-statistics?utm_source=openai",
+        "title": "Key Statistics | HAG | DE000HAG0005 | Fidelity",
+        "id": "S12"
+      },
+      {
+        "url": "https://www.borsaitaliana.it/borsa/azioni/listino-ufficiale.html?isin=IT0003856405&utm_source=openai",
+        "title": "Azioni IT0003856405: listino ufficiale | Leonardo - Borsa Italiana - Borsa Italiana",
+        "id": "S13"
+      },
+      {
+        "url": "https://www.leonardo.com/documents/15646808/32047172/1Q%2B2026_LEONARDO_PRESENTATION.pdf/10f77b21-efbd-7f49-1c98-5e1bac5a81d3?t=1778071025841&utm_source=openai",
+        "title": "Presentazione standard di PowerPoint",
+        "id": "S14"
+      },
+      {
+        "url": "https://companiesmarketcap.com/leonardo/marketcap/?utm_source=openai",
+        "title": "Leonardo (LDO.MI) - Market capitalization",
+        "id": "S15"
+      },
+      {
+        "url": "https://stockanalysis.com/quote/epa/HO/financials/ratios/?utm_source=openai",
+        "title": "Thales (EPA:HO) Financial Ratios",
+        "id": "S16"
+      },
+      {
+        "url": "https://www.thalesgroup.com/sites/default/files/2025-08/Thales-Universal-Registration-Document-2024-EN.pdf?utm_source=openai",
+        "title": "Anglais - DEU 2024",
+        "id": "S17"
+      },
+      {
+        "url": "https://live.euronext.com/en/product/equities/FR0000121329-xpar?utm_source=openai",
+        "title": "THALES | FR0000121329 | Euronext exchange Live quotes",
+        "id": "S18"
+      }
+    ],
+    "result": {
+      "sectorDefinition": "Europe-headquartered suppliers of military platforms, weapons, ammunition, defense electronics and related services, including the UK. Diversified aerospace and technology groups qualify where defense is substantial; European-only sales are not required. Selected instruments are primary listings only.",
+      "candidates": [
+        {
+          "name": "Rheinmetall AG",
+          "ticker": "RHM",
+          "exchange": "Frankfurt Stock Exchange, principally Xetra",
+          "listingCountry": "Germany",
+          "quoteCurrency": "EUR",
+          "securityType": "Common",
+          "isSeed": true,
+          "confidence": "High",
+          "relevance": "Owner-named anchor comparison for military vehicles, weapons, ammunition and air defense, with particular relevance to land-force equipment and production expansion."
+        },
+        {
+          "name": "BAE Systems plc",
+          "ticker": "BA.",
+          "exchange": "London Stock Exchange, Main Market",
+          "listingCountry": "United Kingdom",
+          "quoteCurrency": null,
+          "securityType": "Common",
+          "confidence": "High",
+          "relevance": "Broad defense-focused peer spanning combat vehicles, aircraft, submarines, frigates and electronic warfare; adds platform and program diversity."
+        },
+        {
+          "name": "HENSOLDT AG",
+          "ticker": "HAG",
+          "exchange": "Frankfurt Stock Exchange, Prime Standard",
+          "listingCountry": "Germany",
+          "quoteCurrency": "EUR",
+          "securityType": "Common",
+          "confidence": "High",
+          "relevance": "Focused defense-electronics supplier covering radar, electromagnetic warfare, avionics and optronics; relevant for comparing sensor content with Rheinmetall's weapons and air-defense systems."
+        },
+        {
+          "name": "Leonardo S.p.A.",
+          "ticker": "LDO",
+          "exchange": "Euronext Milan",
+          "listingCountry": "Italy",
+          "quoteCurrency": "EUR",
+          "securityType": "Common",
+          "confidence": "High",
+          "relevance": "Diversified aerospace-and-defense peer with substantial defense electronics, military aircraft and helicopter activities; civil helicopters and aerostructures create business-mix differences."
+        },
+        {
+          "name": "Thales S.A.",
+          "ticker": "HO",
+          "exchange": "Euronext Paris",
+          "listingCountry": "France",
+          "quoteCurrency": "EUR",
+          "securityType": "Common",
+          "confidence": "High",
+          "relevance": "Diversified defense, aerospace and digital-technology peer; military radar, sonar, electronic warfare and combat systems make it particularly relevant alongside HENSOLDT."
+        }
+      ],
+      "excluded": [
+        {
+          "name": "Saab AB (publ)",
+          "reason": "Unusable ticker “SAAB B”"
+        }
+      ],
+      "unresolvedSeeds": [
+        "Rheinmetall"
+      ],
+      "notes": "Extracted from research with a September 13, 2026 cutoff; listing status and figures were not independently verified. Order follows the research's relevance ranking, not a buy recommendation. Market capitalizations are source-reported snapshots in whole currency units, not synchronized valuations or app-calculated values: Rheinmetall, Fidelity/Morningstar, September 10, 2026 (S3); BAE Systems, LSE, September 10, 2026 (S6); Saab, company-reported December 31, 2025, historical rather than September 2026 (S9); HENSOLDT, Fidelity/Morningstar, September 11, 2026 (S12); Leonardo, CompaniesMarketCap, September 2026 with no exact day provided (S15); Thales, Euronext, September 9, 2026 (S18). Market capitalization is a point-in-time market metric, not a fiscal-period GAAP or adjusted measure. BAE's quote currency is British pence (GBX), while its market capitalization is in GBP. ADRs, secondary listings and unlisted share classes are outside the selected instruments; no individual company exclusions were named."
+    }
+  }
+}

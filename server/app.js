@@ -13,7 +13,7 @@ export function createApp(store,options={}) {
     next();
   });
   app.use(express.json({limit:'5mb',strict:true}));
-  app.get('/api/workspace',(req,res)=>res.json({...store.read(),today:today(),access:policy.label,accessDescription:policy.description,version:'1.2.0'}));
+  app.get('/api/workspace',(req,res)=>res.json({...store.read(),today:today(),access:policy.label,accessDescription:policy.description,version:'1.3.0'}));
   app.get('/api/health',(req,res)=>res.json({ok:true,schemaVersion:1}));
   app.get('/api/export',(req,res)=>res.attachment(`investment-research-${today()}.json`).json(store.export()));
   app.get('/api/backups',(req,res)=>res.json({backups:store.backupStatus()}));
@@ -32,6 +32,10 @@ export function createApp(store,options={}) {
     app.post('/api/research/runs/:id/accept',route((req,res)=>res.json(research.accept(req.params.id,req.headers['if-match'],req.body.acknowledgeChanged===true))));
     app.post('/api/research/settings',route((req,res)=>res.json(research.saveSettings(req.body,req.headers['if-match']))));
     app.get('/api/research/export',route((req,res)=>res.attachment(`investment-research-ai-${today()}.json`).json(research.export())));
+    app.get('/api/research/analyses',route((req,res)=>res.json({analyses:research.listAnalyses()})));
+    app.get('/api/research/analyses/:id',route((req,res)=>res.json(research.readAnalysis(req.params.id))));
+    app.post('/api/research/analyses',route((req,res)=>res.status(202).json(research.createAnalysis(req.body))));
+    app.post('/api/research/analyses/:id/cancel',route((req,res)=>res.json(research.cancelAnalysis(req.params.id))));
   }
   app.use(express.static(fileURLToPath(new URL('../public',import.meta.url)),{dotfiles:'deny',index:'index.html',etag:false}));
   app.use((req,res)=>res.status(404).json({error:'Not found'}));

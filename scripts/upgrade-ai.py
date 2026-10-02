@@ -16,13 +16,23 @@ def request(path, body=None):
     req=urllib.request.Request(root+path,data=json.dumps(body).encode() if body is not None else None,headers=headers)
     with urllib.request.urlopen(req,timeout=20) as res:return json.load(res)
 
-if release.exists():raise SystemExit('Release already exists. Refusing to overwrite it.')
+if release.exists():
+    if sys.argv[1:]!=['--activate-existing']:raise SystemExit('Release already exists. Refusing to overwrite it.')
+    # A failed activation leaves the verified immutable release in place. Compare runtime files before retrying.
+    for name in ['server','public','node_modules','package.json','package-lock.json']:
+        src=source/name; dst=release/name
+        files=[src] if src.is_file() else [p for p in src.rglob('*') if p.is_file() and p.name!='.DS_Store']
+        targets=[dst] if dst.is_file() else [p for p in dst.rglob('*') if p.is_file() and p.name!='.DS_Store']
+        if {str(p.relative_to(source)) for p in files}!={str(p.relative_to(release)) for p in targets}:raise SystemExit('Existing release runtime file inventory differs.')
+        for path in files:
+            if path.read_bytes()!=(release/path.relative_to(source)).read_bytes():raise SystemExit('Existing release runtime differs from verified source.')
+
 if not current.is_symlink():raise SystemExit('Expected installed current symlink.')
 previous=current.resolve()
 before=request('/api/workspace')
 if any(r['status'] in ('queued','running') for r in request('/api/research/runs')['runs']):raise SystemExit('Research is running. Wait for completion before upgrading.')
 backup=request('/api/backup',{})['backup']
-shutil.copytree(source,release,ignore=shutil.ignore_patterns('.git','runtime','.env','*.sqlite','*.sqlite-wal','*.sqlite-shm','*.db','.DS_Store','__pycache__'))
+if not release.exists():shutil.copytree(source,release,ignore=shutil.ignore_patterns('.git','runtime','.env','*.sqlite','*.sqlite-wal','*.sqlite-shm','*.db','.DS_Store','__pycache__'))
 # The locked, already installed dependencies are copied with the verified source. No runtime secrets are in the release.
 launcher=base/'Connect AI.command'
 launcher_text='#!/bin/zsh\nset -eu\n'+ 'cd '+"'"+str(base).replace("'","'\\''")+"/current'\n" + "'"+node.replace("'","'\\''")+"' scripts/configure-ai.js\n"

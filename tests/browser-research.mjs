@@ -34,7 +34,7 @@ try{
   assert.equal(await page.locator('.ai-verdict h2').textContent(),'Watch');assert.ok(await page.locator('.ai-cite').count());
   assert.ok((await page.locator('.ai-cite').first().getAttribute('href')).startsWith('https://example.com/'));
   assert.ok((await page.locator('#ai-result').textContent()).includes('Valuation incomplete'));
-  await page.locator('.ai-verdict').scrollIntoViewIfNeeded();await page.screenshot({path:out+'/desktop-assessment.png',fullPage:true});
+  await page.evaluate(()=>document.querySelector('.ai-verdict')?.scrollIntoView());await page.screenshot({path:out+'/desktop-assessment.png',fullPage:true});
  });
  await check('accepting a review preserves an unsaved main-form draft and saves exactly one evidence note',async()=>{
   await page.locator('#thesis').fill('UNSAVED MAIN DRAFT');
@@ -80,7 +80,7 @@ try{
   await page.setViewportSize({width:390,height:844});await page.locator('#research-toggle').click();
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
   const box=await page.locator('#research-panel').boundingBox();assert.ok(box.x>=0&&box.width<=391);
-  const list=await(await page.request.get(root+'/api/research/runs?companyId='+companies[0].id)).json();const reviewId=list.runs.find(r=>r.kind==='review').id;await page.locator('#ai-history').selectOption(reviewId);await page.waitForFunction(id=>document.querySelector('#ai-result').dataset.run===id,reviewId);await page.locator('.ai-verdict').waitFor();await page.locator('.ai-verdict').scrollIntoViewIfNeeded();
+  const list=await(await page.request.get(root+'/api/research/runs?companyId='+companies[0].id)).json();const reviewId=list.runs.find(r=>r.kind==='review').id;await page.locator('#ai-history').selectOption(reviewId);await page.waitForFunction(id=>document.querySelector('#ai-result').dataset.run===id,reviewId);await page.locator('.ai-verdict').waitFor();await page.evaluate(()=>document.querySelector('.ai-verdict')?.scrollIntoView());
   await page.screenshot({path:out+'/mobile-assessment.png',fullPage:true});await page.locator('#ai-close').click();assert.equal(await page.locator('#research-panel').isVisible(),false);
  });
  await check('200%-equivalent CSS viewport fits and panel remains operable',async()=>{
@@ -105,6 +105,33 @@ try{
  await check('reviewed agent fields save through the normal snapshot workflow with nullable source date',async()=>{
   await page.locator('#snapshot-form button[type=submit]').click();await page.locator('.copy-snapshot').waitFor();
   const data=(await(await page.request.get(root+'/api/workspace')).json()).workspace;assert.equal(data.snapshots.length,1);assert.equal(data.snapshots[0].forwardEPS.value,7.25);assert.equal(data.snapshots[0].forwardEPS.source.publicationDate,null);assert.equal(data.snapshots[0].forwardEPS.kind,'Analyst estimate');assert.equal(data.snapshots[0].price.value,123.45);
+ });
+ await check('a sector request runs discovery, company research and ranking, then renders the dashboard',async()=>{
+  await page.setViewportSize({width:1440,height:1000});await page.goto(root+'/#analysis');await page.locator('#analysis-form').waitFor();
+  await page.locator('#an-sector').fill('SYNTHETIC fixture sector');await page.locator('#an-seeds').fill('ETN');await page.locator('#an-max').fill('2');
+  assert.ok((await page.locator('#an-estimate').textContent()).includes('13 provider requests'));
+  await page.locator('#analysis-form button[type=submit]').click();
+  await page.waitForURL(/#analysis\/[0-9a-f-]+$/);await page.locator('.an-progress').waitFor();
+  await page.locator('.an-ranking').waitFor({timeout:60000});
+  const ranks=await page.locator('.an-rank').allTextContents();assert.equal(ranks.length,2);assert.ok(ranks[0].includes('ETN'));assert.ok(ranks[1].includes('SYN'));
+  assert.equal(await page.locator('.an-rank .badge.consider').count(),1);
+  assert.ok(await page.locator('.an-table').count()>=3);assert.ok(await page.locator('.bars rect').count()>=2);
+  const text=await page.locator('#main').textContent();assert.ok(text.includes('EV / EBITDA'));assert.ok(text.includes('Why the leaders rank first'));assert.ok(text.includes('Not analyzed'));
+  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+  const data=(await(await page.request.get(root+'/api/workspace')).json()).workspace;const syn=data.companies.find(c=>c.ticker==='SYN');assert.ok(syn);assert.ok(data.evidence.some(e=>e.companyId===syn.id&&e.author==='AI sector discovery'));
+  await page.screenshot({path:out+'/sector-dashboard.png',fullPage:true});
+ });
+ await check('dashboard drill-down opens the company research in the assistant with its snapshot',async()=>{
+  const runId=await page.locator('.an-rank [data-run]').first().getAttribute('data-run');await page.locator('.an-rank [data-run]').first().click();await page.locator('#research-panel').waitFor({state:'visible'});await page.waitForFunction(id=>document.querySelector('#ai-result')?.dataset.run===id,runId);await page.locator('.ai-verdict').waitFor();
+  const text=await page.locator('#ai-result').textContent();assert.ok(text.includes('Financial & market snapshot'));assert.ok(text.includes('part of a sector analysis'));assert.ok(text.includes('Catalysts'));
+  await page.locator('#ai-close').click();
+ });
+ await check('analysis history and inbox link to the dashboard; the mobile dashboard fits the viewport',async()=>{
+  await page.goto(root+'/#analysis');await page.locator('.analysis-row').waitFor();assert.ok((await page.locator('.analysis-row').first().textContent()).includes('Top: ETN'));
+  await page.goto(root+'/#research');await page.locator('#ai-inbox-rows a[href^="#analysis/"]').first().waitFor();
+  await page.setViewportSize({width:390,height:844});await page.locator('#ai-inbox-rows a[href^="#analysis/"]').first().click();await page.locator('.an-ranking').waitFor();
+  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+  await page.screenshot({path:out+'/mobile-sector-dashboard.png',fullPage:true});await page.setViewportSize({width:1440,height:1000});
  });
  assert.deepEqual(errors,[]);checks.push('No browser JavaScript errors');
  writeFileSync(out+'/results.json',JSON.stringify({checks,errors,provider:'Synthetic only; no OpenAI calls',viewportSizes:['1440×1000','390×844','720×500 (200%-equivalent)']},null,2));
