@@ -1,6 +1,6 @@
-# Investment Research — local MVP 1.3.1
+# INVEST-IGATOR — local MVP 1.3.2
 
-For the October 2 product direction and the distinction between shipped features and the agreed next workflow, read [Workflow alignment](docs/WORKFLOW-ALIGNMENT.md). The Watch-only dashboard, unified dispositions and actual-versus-modeled group comparison described there are not yet implemented in 1.3.1.
+Formerly "Investment Research"; renamed on October 2, 2026. Start with [HANDOFF.md](HANDOFF.md) for the current state and [the session plan](docs/NEXT-SESSIONS-PLAN.md) for what comes next. The research workflow planned there (name or ticker intake, automatic Research / Watch / Declined dispositions with an owner-set Invested option, results on the home screen, price feeds, actual versus modeled performance) is not yet implemented in 1.3.2. Internal identifiers keep the old name on purpose: the export format `investment-research`, the data folder `InvestmentResearch` and the LaunchAgent labels `com.investmentresearch.*`.
 
 Open **http://<lan-address>:5191** from your trusted home network, or **http://127.0.0.1:5191** on the server Mac. The watchlist is seeded with ETN, VRT, NVT, APH, PWR, FIX and ANET. Financial values start blank. No household account data was imported.
 
@@ -29,9 +29,10 @@ In **Financial snapshots**, expand **Forward EPS** and choose **Research Forward
 
 ## Installed locations
 
-- Source repository: `~/.codex/.chatgpt-projects/g-p-6a9d61f2e3248191a56e46d334ad1c53/investment-research`
-- Releases: `~/Desktop/_LOCAL APP DEVELOPMENT/FINANCIAL PLANNING/investment-research/releases/`
-- Active release: `~/Desktop/_LOCAL APP DEVELOPMENT/FINANCIAL PLANNING/investment-research/current`
+- Project folder (start agent threads here): `~/Desktop/_LOCAL APP DEVELOPMENT/INVEST-IGATOR/`
+- Source repository (git, edit here): `~/Desktop/_LOCAL APP DEVELOPMENT/INVEST-IGATOR/invest-igator/source`
+- Releases: `~/Desktop/_LOCAL APP DEVELOPMENT/INVEST-IGATOR/invest-igator/releases/`
+- Active release: `~/Desktop/_LOCAL APP DEVELOPMENT/INVEST-IGATOR/invest-igator/current`
 - Durable database: `~/Library/Application Support/InvestmentResearch/research.sqlite`
 - SQLite WAL sidecars: same directory. Never independently copy or remove live WAL/SHM files.
 - Backups: `~/Library/Application Support/InvestmentResearch/backups/`
@@ -83,7 +84,7 @@ JSON restoration is the normal recovery workflow: choose a previous JSON export 
 To verify a SQLite backup without touching production:
 
 ```sh
-cd '~/Desktop/_LOCAL APP DEVELOPMENT/FINANCIAL PLANNING/investment-research/current'
+cd '~/Desktop/_LOCAL APP DEVELOPMENT/INVEST-IGATOR/invest-igator/current'
 node scripts/restore-database.js '/absolute/backup.sqlite' '/absolute/new-disposable-directory'
 RESEARCH_DATA_DIR='/absolute/new-disposable-directory' PORT=5192 npm start
 ```
@@ -96,7 +97,9 @@ All automatic backups are currently on the same Mac. They protect against accide
 
 ## Update and rollback
 
-1. Work in a separate source checkout; do not edit `current` in place. Increment the application version. Keep `package-lock.json`.
+The steps below are what `python3 scripts/upgrade-ai.py` automates; use that script from `source/` for every release. It finds the app folder from its own location, so it keeps working if the folders are renamed.
+
+1. Work in the source repository; do not edit `current` in place. Increment the application version in `package.json` and the version literal in `server/app.js`. Keep `package-lock.json`.
 2. Run `npm ci`, `npm test`, `npm run build` and the browser suite. Test any migration on a restored disposable database first. Back up the live app before switching releases.
 3. Copy the tested application and installed production dependencies into a **new** `releases/<version>` directory. Preserve the previous release. Do not copy runtime data into it.
 4. Change the `current` symlink to the new release and restart only `com.investmentresearch.app`. Verify `/api/health`, watchlist, saving and backup creation. The app and backup jobs both resolve `current`.

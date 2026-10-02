@@ -12,7 +12,7 @@ const policy=accessPolicy(options),store=new Store(resolve(data,'research.sqlite
 const research=new ResearchService(store,new OpenAIResearchProvider({key:()=>readAPIKey(data)}));
 const app=createApp(store,{...options,research});
 const servers=policy.addresses.map(address=>{
-  const server=app.listen(port,address,()=>console.log(`Investment Research: http://${address}:${port}`));
+  const server=app.listen(port,address,()=>console.log(`INVEST-IGATOR: http://${address}:${port}`));
   server.requestTimeout=30000; server.headersTimeout=15000;
   server.on('error',error=>{console.error('Listener unavailable:',error.code);process.exit(1);});
   return server;

@@ -24,7 +24,7 @@ for attempt in range(40):
 else:raise AssertionError('Scheduled backup job did not produce a backup')
 backup=next(iter(new))
 parent=pathlib.Path(tempfile.mkdtemp(prefix='investment-research-service-restore-'))
-release=pathlib.Path('~/Desktop/_LOCAL APP DEVELOPMENT/FINANCIAL PLANNING/investment-research/current')
+release=pathlib.Path(__file__).resolve().parents[2]/'current'
 subprocess.run(['/usr/local/bin/node',str(release/'scripts/restore-database.js'),str(backup),str(parent/'restored')],check=True)
 print('PASS: production seeded exactly seven companies with blank financial data')
 print('PASS: launchd process restart preserved complete workspace and revision')

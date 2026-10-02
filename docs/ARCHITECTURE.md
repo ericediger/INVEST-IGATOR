@@ -1,4 +1,4 @@
-# Investment Research 1.0 — architecture
+# INVEST-IGATOR (formerly Investment Research) 1.0 — architecture
 
 Source of truth: investment-research-app-brief__v008__2026-09-06.md (immutable reference). This application does not use the household financial files.
 

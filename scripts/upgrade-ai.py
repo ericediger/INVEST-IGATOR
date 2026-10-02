@@ -1,7 +1,7 @@
 """Install a new immutable local release and preserve the database before switching."""
 import json, os, pathlib, shutil, subprocess, urllib.request, time, plistlib, sys
 source = pathlib.Path(__file__).resolve().parents[1]
-base = pathlib.Path.home() / 'Desktop/_LOCAL APP DEVELOPMENT/FINANCIAL PLANNING/investment-research'
+base = source.parent  # <app folder>/source -> <app folder>; survives folder renames
 version = json.loads((source/'package.json').read_text())['version']
 release = base/'releases'/version
 current = base/'current'
@@ -27,12 +27,13 @@ if release.exists():
         for path in files:
             if path.read_bytes()!=(release/path.relative_to(source)).read_bytes():raise SystemExit('Existing release runtime differs from verified source.')
 
+if source.name!='source' or not (base/'releases').is_dir():raise SystemExit('Run this from <app folder>/source/scripts; no releases folder found beside source.')
 if not current.is_symlink():raise SystemExit('Expected installed current symlink.')
 previous=current.resolve()
 before=request('/api/workspace')
 if any(r['status'] in ('queued','running') for r in request('/api/research/runs')['runs']):raise SystemExit('Research is running. Wait for completion before upgrading.')
 backup=request('/api/backup',{})['backup']
-if not release.exists():shutil.copytree(source,release,ignore=shutil.ignore_patterns('.git','runtime','.env','*.sqlite','*.sqlite-wal','*.sqlite-shm','*.db','.DS_Store','__pycache__'))
+if not release.exists():shutil.copytree(source,release,ignore=shutil.ignore_patterns('.git','runtime','.env','*.sqlite','*.sqlite-wal','*.sqlite-shm','*.db','.DS_Store','__pycache__','.claude','.codex','Session Reports','session-logs','HANDOFF.md','AGENTS.md','CLAUDE.md'))
 # The locked, already installed dependencies are copied with the verified source. No runtime secrets are in the release.
 launcher=base/'Connect AI.command'
 launcher_text='#!/bin/zsh\nset -eu\n'+ 'cd '+"'"+str(base).replace("'","'\\''")+"/current'\n" + "'"+node.replace("'","'\\''")+"' scripts/configure-ai.js\n"

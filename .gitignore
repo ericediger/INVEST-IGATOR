@@ -5,3 +5,5 @@ runtime/
 *.db*
 .DS_Store
 __pycache__/
+.claude/
+.codex/

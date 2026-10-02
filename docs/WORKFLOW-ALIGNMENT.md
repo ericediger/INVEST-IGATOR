@@ -1,5 +1,7 @@
 # Workflow alignment — October 2, 2026
 
+> **Status, added later on October 2:** this is the Codex agent's summary of a conversation; the owner had not seen it and it is not an owner requirement. Three things in it are out of date: the merge to `main`, the repository move and the candidate-list ingestion were approved the same day; the owner holds no stock, so there is no "portfolio import"; and the owner added an owner-set **Invested** disposition. The code-evidence table below is accurate for 1.3.1. Current direction: `HANDOFF.md` and `docs/NEXT-SESSIONS-PLAN.md`. The app is now named INVEST-IGATOR.
+
 This is a reconciliation of the installed application, the project handoff written by the other thread, and the owner's latest use-case discussion. It records the next product direction; it does not claim those changes have shipped. The original v008 brief and historical session reports remain historical references.
 
 ## Confirmed product direction

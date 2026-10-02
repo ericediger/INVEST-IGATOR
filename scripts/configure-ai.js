@@ -5,7 +5,7 @@ import {resolve,join} from 'node:path';
 process.umask(0o077);
 if(!process.stdin.isTTY) throw new Error('Open this setup in a terminal on the server Mac. Do not paste API keys into chat.');
 const dir=resolve(process.env.RESEARCH_DATA_DIR||join(homedir(),'Library/Application Support/InvestmentResearch'));
-console.log('Connect Investment Research to OpenAI\n\nCreate an API key for a funded project at https://platform.openai.com/api-keys.\nSet your project budget there. API usage is billed separately from ChatGPT.\n\nPaste the API key below. Your input is hidden. Press Enter to save, or Escape to cancel.');
+console.log('Connect INVEST-IGATOR to OpenAI\n\nCreate an API key for a funded project at https://platform.openai.com/api-keys.\nSet your project budget there. API usage is billed separately from ChatGPT.\n\nPaste the API key below. Your input is hidden. Press Enter to save, or Escape to cancel.');
 process.stdout.write('API key: ');process.stdin.setRawMode(true);process.stdin.resume();process.stdin.setEncoding('utf8');
 let value='';
 process.stdin.on('data',chunk=>{

@@ -3,7 +3,7 @@
 from pathlib import Path
 import os,shutil,plistlib,subprocess,json,urllib.request,time,socket,hashlib
 src=Path(__file__).resolve().parent.parent
-base=Path('~/Desktop/_LOCAL APP DEVELOPMENT/FINANCIAL PLANNING/investment-research')
+base=src.parent  # <app folder>/source -> <app folder>
 release=base/'releases/1.0.1'
 plist=Path('~/Library/LaunchAgents/com.investmentresearch.app.plist')
 label=f'gui/{os.getuid()}/com.investmentresearch.app'

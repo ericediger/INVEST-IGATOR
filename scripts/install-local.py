@@ -2,7 +2,7 @@
 """Install a tested, isolated release and two launchd jobs. Never replaces an existing release."""
 import os, pathlib, shutil, plistlib, subprocess, json
 src=pathlib.Path(__file__).resolve().parent.parent
-base=pathlib.Path('~/Desktop/_LOCAL APP DEVELOPMENT/FINANCIAL PLANNING/investment-research')
+base=src.parent  # <app folder>/source -> <app folder>
 version=json.loads((src/'package.json').read_text())['version']
 release=base/'releases'/version
 if release.exists(): raise SystemExit('Release already exists; choose a new version. Nothing replaced.')
