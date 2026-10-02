@@ -52,8 +52,9 @@ export function responseSources(response) {
 }
 
 export class OpenAIResearchProvider {
-  constructor({key, model = process.env.RESEARCH_AI_MODEL || 'gpt-5.4', fetcher = fetch}) {
-    this.key = key; this.model = model; this.fetcher = fetcher;
+  constructor({key, model = process.env.RESEARCH_AI_MODEL || 'gpt-6-astra', reasoningEffort = process.env.RESEARCH_AI_REASONING_EFFORT || 'medium', fetcher = fetch}) {
+    if (!['low','medium','high','xhigh','max'].includes(reasoningEffort)) throw new Error('Unsupported research reasoning effort.');
+    this.key = key; this.model = model; this.reasoningEffort = reasoningEffort; this.fetcher = fetcher;
   }
   configured() { return !!this.key(); }
   async request({instructions, input, search = false, schema = null, signal}) {
@@ -68,12 +69,12 @@ export class OpenAIResearchProvider {
     try {
       const response = await this.fetcher('https://api.openai.com/v1/responses', {
         method: 'POST', headers: {'Content-Type': 'application/json', Authorization: `Bearer ${key}`}, signal: controller.signal,
-        body: JSON.stringify({model: this.model, store: false, instructions, input, max_output_tokens: 6500,
+        body: JSON.stringify({model: this.model, reasoning: {effort: this.reasoningEffort}, store: false, instructions, input, max_output_tokens: 6500,
           ...(search ? {tools: [{type: 'web_search'}], tool_choice: 'required', max_tool_calls: 4} : {}),
           ...(schema ? {text: {format: {type: 'json_schema', name: 'investment_assessment', strict: true, schema}}} : {})})
       });
       if (!response.ok) {
-        const messages = {401: 'The OpenAI API key was rejected. Update the server key.', 403: 'This API project cannot access the requested model or tools.', 429: 'OpenAI usage or rate limit reached. Check API billing and limits before trying again.'};
+        const messages = {401: 'The OpenAI API key was rejected. Update the server key.', 403: 'This API project cannot access the requested model or tools.', 404: 'The requested research model is unavailable to this API project. Check model access.', 429: 'OpenAI usage or rate limit reached. Check API billing and limits before trying again.'};
         fail(messages[response.status] || `Research provider unavailable (HTTP ${response.status}). Start a new run to retry.`, 502);
       }
       const result = await response.json();

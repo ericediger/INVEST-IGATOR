@@ -1,4 +1,4 @@
-# AI research — release 1.1.0
+# AI research — release 1.2.0
 
 ## Everyday use
 
@@ -12,7 +12,7 @@
 
 **Consider** requires both a saved reference quote no more than seven calendar days old and complete saved forward valuation scenarios. Without them, a requested Consider result is downgraded to **Research further** and the missing evidence is shown. Other recommendation categories are **Watch**, **Pass**, and **Research further**. These are company research opinions, not a test of personal suitability. Evidence confidence describes source support, not a probability of investment success.
 
-The price range shown by the app uses its existing deterministic scenario calculations. AI is instructed not to invent prices, target prices or returns. This first release does not import live quotes or fill financial snapshots. Financial statements discussed in the report must identify source, period, units and accounting basis; citation validation does not independently establish factual accuracy.
+The price range shown by the app uses its existing deterministic scenario calculations. AI is instructed not to invent prices, target prices or returns. The app does not import live quotes. Release 1.2.0 can research and fill Forward EPS fields for explicit review and snapshot saving. Financial statements discussed in the report must identify source, period, units and accounting basis; citation validation does not independently establish factual accuracy.
 
 ## Connect OpenAI privately
 
@@ -20,7 +20,7 @@ On the server Mac, open **Connect AI.command** in the installed `investment-rese
 
 The setup writes a private `openai-api-key` file (mode 0600) in `~/Library/Application Support/InvestmentResearch`. The server reads it when checking availability and making requests, so no restart is required. Choose **Recheck connection** after setup. “Connected” means a key is present; the first run verifies model access and billing. Keys that are readable by other accounts are ignored. The setup does not verify account billing or make a paid research call.
 
-Developers can use `OPENAI_API_KEY`, or `OPENAI_API_KEY_FILE` pointing to a private file. For a disposable development server use `RESEARCH_DATA_DIR` when running `npm run configure-ai` to avoid configuring production. Never embed credentials in frontend code or commit a key. The default model is `gpt-5.4`; `RESEARCH_AI_MODEL` can select another model supporting Responses web search and structured outputs. Different models can have different costs or API support.
+Developers can use `OPENAI_API_KEY`, or `OPENAI_API_KEY_FILE` pointing to a private file. For a disposable development server use `RESEARCH_DATA_DIR` when running `npm run configure-ai` to avoid configuring production. Never embed credentials in frontend code or commit a key. The default model is `gpt-6-astra` with explicit `medium` reasoning for every stage. `RESEARCH_AI_REASONING_EFFORT` can override the effort; `RESEARCH_AI_MODEL` can select another model supporting Responses web search and structured outputs. Different models can have different costs or API support.
 
 ## Data and usage
 
@@ -49,4 +49,15 @@ Tests use clearly labeled synthetic provider responses and temporary databases. 
 - https://developers.openai.com/api/docs/guides/tools-web-search
 - https://developers.openai.com/api/docs/guides/structured-outputs
 - https://developers.openai.com/api/reference/typescript/resources/responses/methods/create
-- https://developers.openai.com/api/docs/models/gpt-5.4
+- https://developers.openai.com/api/docs/models/gpt-6-astra
+
+
+## Agent-assisted Forward EPS (1.2.0)
+
+Expand **Forward EPS** in a company's financial snapshot form and choose **Research Forward EPS**. A first web-search call looks for a directly published analyst point estimate, identifying fiscal year versus next-twelve-month estimates, accounting basis, currency, share basis and dates. A second structured-output call prepares the fields. This consumes one daily run, at most two model requests, and up to four web tool calls. The existing snapshot currency/share basis and requested EPS period are sent as context; the agent must verify them.
+
+The stored draft includes the original supporting source reference, a short supporting passage, source publication date and estimate as-of date independently (both nullable), gaps and any stale-estimate warning. The source title and URL come from the returned citation registry, not invented metadata. Company guidance, historical actual EPS, midpoint calculations, currency conversions and inferred EPS from a price/P-E ratio are excluded. If a usable analyst estimate is unavailable, the draft explains the missing evidence. It does not manufacture a value.
+
+**Fill Forward EPS fields** requires a sourced value, currency and fiscal period. An unstated share basis remains unknown and carries an explicit warning to confirm compatibility before saving. It fills value, period, basis, Analyst estimate provenance, source title/URL and publication date. Unknown basis/publication dates stay blank; required missing basis must be supplied before a snapshot can be saved. Known currency and share basis populate the shared snapshot fields only if blank; conflicting known entries block filling. Unknown share basis stays blank when no snapshot basis is entered. Replacing existing EPS fields requires review in the normal confirmation dialog. Price, quote date, other metrics and other form inputs are preserved.
+
+Filling makes an unsaved form draft. **Save new snapshot** uses the existing snapshot validation and append-only history. The original AI draft remains in the research archive and is included in subsequent company conversation context. The workspace schema is unchanged: the legacy persisted snapshot provenance string remains `Manual snapshot`, denoting an explicitly saved form; the metric remains labeled `Analyst estimate`, and its source is preserved. This is not automatic valuation scenario generation or automatic investment decision recording.

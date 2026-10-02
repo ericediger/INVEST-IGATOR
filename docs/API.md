@@ -51,7 +51,7 @@ All routes inherit the existing Host, peer-network, Origin and JSON mutation pro
 
 - `GET /api/research/status`: key-present status (never key), configured model, mandate revision, daily usage.
 - `POST /api/research/settings`: `{horizonMonths, criteria, dailyLimit}`, with settings revision in `If-Match`.
-- `POST /api/research/runs`: `{companyId, kind: "review"|"question", question?: string}` → 202 and persisted job. Request returns before provider work.
+- `POST /api/research/runs`: `{companyId, kind: "review"|"question"|"forward_eps", question?: string, metricRequest?: {currency: string|null, shareBasis: string, period: string}}` → 202 and persisted job. Request returns before provider work.
 - `GET /api/research/runs?companyId=<uuid>`: latest 100 runs; omit companyId for inbox.
 - `GET /api/research/runs/:id`: immutable captured context and completed content, status, source registry, usage and current-context comparison.
 - `POST /api/research/runs/:id/cancel`: `{}`. Queued/running → cancelled, abort request, no late result publication.
@@ -59,3 +59,5 @@ All routes inherit the existing Host, peer-network, Origin and JSON mutation pro
 - `GET /api/research/export`: complete, read-only AI archive JSON (separate from workspace JSON).
 
 Runs progress queued → running → completed/failed/cancelled. Queued/running runs found on service restart become interrupted; retry is a new, user-started run. Research notes and financial workspace do not change during provider work.
+
+Forward EPS runs return a persisted `epsDraft` with nullable fields, validated source reference, missing fields and a `canFill` flag. They do not mutate snapshots. The user applies the draft to the form and submits the existing `snapshot.add` action.

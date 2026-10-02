@@ -20,13 +20,17 @@ if release.exists():raise SystemExit('Release already exists. Refusing to overwr
 if not current.is_symlink():raise SystemExit('Expected installed current symlink.')
 previous=current.resolve()
 before=request('/api/workspace')
+if any(r['status'] in ('queued','running') for r in request('/api/research/runs')['runs']):raise SystemExit('Research is running. Wait for completion before upgrading.')
 backup=request('/api/backup',{})['backup']
 shutil.copytree(source,release,ignore=shutil.ignore_patterns('.git','runtime','.env','*.sqlite','*.sqlite-wal','*.sqlite-shm','*.db','.DS_Store','__pycache__'))
 # The locked, already installed dependencies are copied with the verified source. No runtime secrets are in the release.
 launcher=base/'Connect AI.command'
-if launcher.exists():raise SystemExit('Key setup launcher already exists. Inspect before replacing.')
-launcher.write_text('#!/bin/zsh\nset -eu\n'+ 'cd '+"'"+str(base).replace("'","'\\''")+"/current'\n" + "'"+node.replace("'","'\\''")+"' scripts/configure-ai.js\n")
-launcher.chmod(0o700)
+launcher_text='#!/bin/zsh\nset -eu\n'+ 'cd '+"'"+str(base).replace("'","'\\''")+"/current'\n" + "'"+node.replace("'","'\\''")+"' scripts/configure-ai.js\n"
+if launcher.exists():
+    if launcher.read_text()!=launcher_text:raise SystemExit('Existing key setup launcher differs. Inspect before replacing.')
+else:
+    launcher.write_text(launcher_text)
+    launcher.chmod(0o700)
 next_link=base/'current.next'
 if next_link.exists() or next_link.is_symlink():raise SystemExit('Temporary release symlink already exists.')
 next_link.symlink_to(release);next_link.replace(current)

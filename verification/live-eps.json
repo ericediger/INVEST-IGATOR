@@ -1,0 +1,44 @@
+{
+  "status": "completed",
+  "model": "gpt-5.4",
+  "error": null,
+  "canFill": true,
+  "value": 13.55,
+  "period": "FY 2026",
+  "basis": null,
+  "currency": "USD",
+  "source": {
+    "title": "Eaton Corporation (ETN) Stock Forecast & Analyst Price Targets",
+    "url": "https://stockanalysis.com/stocks/etn/forecast/?utm_source=openai",
+    "publicationDate": null
+  },
+  "missingFields": [
+    "publicationDate",
+    "basis",
+    "shareBasis",
+    "GAAP or adjusted basis",
+    "Share basis",
+    "Source publication date"
+  ],
+  "usage": [
+    {
+      "stage": "1 of 2 · Finding a sourced forward EPS estimate",
+      "responseId": "resp_redacted",
+      "model": "gpt-5.4-2026-03-05",
+      "inputTokens": 9239,
+      "outputTokens": 984
+    },
+    {
+      "stage": "2 of 2 · Preparing the EPS fields",
+      "responseId": "resp_redacted",
+      "model": "gpt-5.4-2026-03-05",
+      "inputTokens": 1983,
+      "outputTokens": 222
+    }
+  ],
+  "productionModified": false,
+  "warnings": [
+    "The estimate’s share basis was not stated. Confirm it matches the snapshot before saving."
+  ],
+  "localValidation": "Revalidated stored live provider output after allowing partial drafts with unknown share basis. No additional provider call."
+}

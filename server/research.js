@@ -1,3 +1,4 @@
+import {EPS_JSON,EPS_SEARCH_PROMPT,validateEPSDraft} from './forward-eps.js';
 import {z} from 'zod';
 import {id, now, today, fail, parse, results, companyCopy} from './model.js';
 import {digest} from './store.js';
@@ -5,7 +6,7 @@ import {responseText, responseSources} from './research-provider.js';
 
 export const DEFAULT_MANDATE = {horizonMonths: 12, criteria: 'Assess companies on business quality, durable growth, financial resilience, valuation and downside risk. Seek evidence that challenges the thesis. Evaluate company merits; portfolio suitability is unknown.', dailyLimit: 10};
 const mandateSchema = z.object({horizonMonths: z.number().int().min(3).max(60), criteria: z.string().trim().min(20).max(3000), dailyLimit: z.number().int().min(1).max(30)}).strict();
-const inputSchema = z.object({companyId: z.string().uuid(), kind: z.enum(['review','question']), question: z.string().trim().max(3000).default('')}).strict();
+const inputSchema = z.object({companyId: z.string().uuid(), kind: z.enum(['review','question','forward_eps']), question: z.string().trim().max(3000).default(''), metricRequest:z.object({currency:z.string().max(3).nullable(),shareBasis:z.string().max(500),period:z.string().max(500)}).strict().optional()}).strict();
 const paragraph = z.object({text: z.string().trim().min(1).max(2500), sourceIds: z.array(z.string()).max(20)}).strict();
 export const assessmentSchema = z.object({
   summary: paragraph, recommendation: z.enum(['Consider','Watch','Pass','Research further']), rationale: paragraph,
@@ -66,7 +67,7 @@ export class ResearchService {
     if(!this.db.prepare('UPDATE ai_settings SET revision=?,document=? WHERE singleton=1 AND revision=?').run(id(),JSON.stringify(parsed),revision||'').changes) fail('Research settings changed. Reload them before saving.',409);
     return this.settings();
   }
-  status() {return {configured:this.provider.configured(), model:this.provider.model, settings:this.settings(), usedToday:this.db.prepare('SELECT count(*) AS n FROM ai_runs WHERE substr(created_at,1,10)=?').get(new Date().toISOString().slice(0,10)).n, limitResets:'00:00 UTC'};}
+  status() {return {configured:this.provider.configured(), model:this.provider.model,reasoningEffort:this.provider.reasoningEffort||null, settings:this.settings(), usedToday:this.db.prepare('SELECT count(*) AS n FROM ai_runs WHERE substr(created_at,1,10)=?').get(new Date().toISOString().slice(0,10)).n, limitResets:'00:00 UTC'};}
   read(runId) {
     const row=this.db.prepare('SELECT * FROM ai_runs WHERE id=?').get(runId); if(!row) fail('Research run not found.',404);
     const doc=JSON.parse(row.document), company=this.store.read().workspace.companies.find(c=>c.id===row.company_id);
@@ -95,9 +96,9 @@ export class ResearchService {
       if(this.status().usedToday>=settings.dailyLimit) fail('Daily research limit reached. It resets at 00:00 UTC.',429);
       if(this.db.prepare("SELECT id FROM ai_runs WHERE company_id=? AND status IN ('queued','running')").get(input.companyId)) fail('This company already has research in progress.',409);
       if(this.db.prepare("SELECT count(*) AS n FROM ai_runs WHERE status IN ('queued','running')").get().n>=10) fail('The research queue is full. Wait for a run to finish.',429);
-      const history=this.db.prepare("SELECT id FROM ai_runs WHERE company_id=? AND status='completed' ORDER BY created_at DESC,rowid DESC LIMIT 4").all(input.companyId).reverse().map(r=>{const j=this.read(r.id);return {kind:j.kind,question:j.question,report:j.report,answer:j.answer,sources:j.sources,createdAt:j.createdAt};});
+      const history=this.db.prepare("SELECT id FROM ai_runs WHERE company_id=? AND status='completed' ORDER BY created_at DESC,rowid DESC LIMIT 4").all(input.companyId).reverse().map(r=>{const j=this.read(r.id);return {kind:j.kind,question:j.question,report:j.report,answer:j.answer,epsDraft:j.epsDraft||null,sources:j.sources,createdAt:j.createdAt};});
       const runId=id(), stamp=now();
-      const doc={context,workspaceRevision:revision,fingerprint,settingsRevision,question:input.question,history,model:this.provider.model,promptVersion:1,usage:[],sources:[],report:null,answer:null,error:null};
+      const doc={context,workspaceRevision:revision,fingerprint,settingsRevision,question:input.question,metricRequest:input.metricRequest||null,history,model:this.provider.model,reasoningEffort:this.provider.reasoningEffort||null,promptVersion:1,usage:[],sources:[],report:null,answer:null,error:null};
       if(JSON.stringify(doc).length>210000) fail('Recent conversation is too large for this run. Start with a full company review.',413);
       this.db.prepare('INSERT INTO ai_runs VALUES (?,?,?,?,?,?,?,?)').run(runId,input.companyId,input.kind,'queued','Queued',stamp,stamp,JSON.stringify(doc));
       setImmediate(()=>this.drain());
@@ -122,12 +123,20 @@ export class ResearchService {
       this.patch(runId,{},'running',stage);
       const response=await this.provider.request({instructions:RULES,input,search,schema,signal});
       if(signal.aborted) throw new Error('Cancelled');
-      usage.push({stage,responseId:response.id||null,model:response.model||this.provider.model,inputTokens:response.usage?.input_tokens||0,outputTokens:response.usage?.output_tokens||0});
+      usage.push({stage,responseId:response.id||null,model:response.model||this.provider.model,reasoningEffort:response.reasoning?.effort||this.provider.reasoningEffort||null,inputTokens:response.usage?.input_tokens||0,outputTokens:response.usage?.output_tokens||0});
       for(const s of responseSources(response))if(!sources.some(x=>x.url===s.url))sources.push({...s,id:`S${sources.length+1}`});
       this.patch(runId,{usage,sources},'running',stage);
       return responseText(response);
     };
     const context=JSON.stringify(run.context), previous=JSON.stringify(run.history);
+    if(run.kind==='forward_eps') {
+      const research=await call('1 of 2 · Finding a sourced forward EPS estimate',`${EPS_SEARCH_PROMPT}\nAs of ${run.context.asOf}. Company context: ${context}\nRequested snapshot fields (may be incomplete; verify rather than assume): ${JSON.stringify(run.metricRequest)}`,{search:true});
+      this.patch(runId,{research},'running','EPS evidence collected');
+      const raw=await call('2 of 2 · Preparing the EPS fields',`Extract a forward EPS draft from the research below. Return ONLY values actually supported by the research. The value must be a published analyst point estimate, not company guidance, historical actuals, your assumption, a range midpoint or a calculation. Kind is Analyst estimate. Use sourceId from the registry; its URL/title are supplied by the server. Include a short sourceExcerpt supporting the number and period (no more than 25 words from this source). Null means unknown; never guess a date, currency, accounting basis or share basis. Preserve negative/zero estimates as reported. For next-twelve-month EPS use the explicitly stated NTM period and date; do not substitute a fiscal year. Explain conflicts and exclusions. If a reliable estimate cannot be established, return value:null and explain the gap. A fiscal period end may be in the future; publication and estimate dates may not be after the research as-of date.\nAs of: ${run.context.asOf}\nCompany: ${JSON.stringify(run.context.company)}\nRequested fields: ${JSON.stringify(run.metricRequest)}\nResearch: ${research}\nSource registry: ${JSON.stringify(sources)}`,{schema:EPS_JSON});
+      let parsed;try{parsed=JSON.parse(raw);}catch{fail('The provider returned an unreadable EPS draft. Start a new run to retry.',502);}
+      const epsDraft=validateEPSDraft(parsed,sources,run.context.asOf);
+      this.patch(runId,{epsDraft,sources,usage},'completed',epsDraft.canFill?'EPS fields ready for review':'EPS research needs more evidence');return;
+    }
     if(run.kind==='question') {
       const answer=await call('Investigating your question',`As of ${today()}, answer this question about the selected company. Use web search to verify current factual claims. Include visible inline Markdown source links for every material factual claim. Refer to prior context only as dated history. Do not treat earlier AI findings as verified facts. Selected company context: ${context}\nRecent conversation: ${previous}\nUser question: ${run.question}`,{search:true});
       if(!sources.length)fail('No cited web evidence was returned for this answer. Try a more specific question.',502);

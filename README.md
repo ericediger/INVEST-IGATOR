@@ -1,10 +1,14 @@
-# Investment Research — local MVP 1.1.0
+# Investment Research — local MVP 1.2.0
 
 Open **http://<lan-address>:5191** from your trusted home network, or **http://127.0.0.1:5191** on the server Mac. The watchlist is seeded with ETN, VRT, NVT, APH, PWR, FIX and ANET. Financial values start blank. No household account data was imported.
 
 ## AI research
 
 Open **Research assistant** in the top bar for company research, a contrary-evidence review, recommendations, and persistent follow-up questions. Open **AI research** for the research inbox. Connect a server-side OpenAI API key using **Connect AI.command** in the installed app folder. New AI functionality is documented in `docs/AI-RESEARCH.md`, including usage limits, data sent externally, evidence review, and recovery. Live research requires a funded API project.
+
+## Forward EPS research
+
+In **Financial snapshots**, expand **Forward EPS** and choose **Research Forward EPS**. The agent researches an analyst estimate and prepares the value, fiscal period, accounting basis, provenance and source fields. Review the returned draft and choose **Fill Forward EPS fields**, then save the snapshot normally. Unknown publication dates remain blank; currency/share-basis conflicts are blocked.
 
 ## Everyday use
 

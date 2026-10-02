@@ -1,7 +1,8 @@
 const $=s=>document.querySelector(s);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const stamp=s=>new Date(s).toLocaleString();
-let workspace=null, selected='', open=false, status=null, current=null, runs=[], pollBusy=false, pending=false, inboxToken=0;
+const runLabel=r=>r.kind==='review'?'Assessment':r.kind==='forward_eps'?'Forward EPS':r.question.slice(0,45);
+let workspace=null, selected='', open=false, status=null, current=null, runs=[], pollBusy=false, pending=false, inboxToken=0,viewSequence=0;
 let draftByCompany={},settingsRevision=null,settingsDirty=false;
 try {open=localStorage.getItem('research-open')==='true';selected=localStorage.getItem('research-company')||'';}catch{}
 async function api(path,body,revision){const r=await fetch('/api/research/'+path,{method:body?'POST':'GET',headers:body?{'Content-Type':'application/json','X-Research-Request':'1',...(revision?{'If-Match':revision}:{})}:{},body:body?JSON.stringify(body):undefined});const data=await r.json();if(!r.ok)throw new Error(data.error||'Research is unavailable.');return data;}
@@ -18,14 +19,14 @@ function linkedText(text,sources){
 function showError(e){$('#ai-feedback').textContent=e.message||e;$('#ai-feedback').hidden=false;}
 function setOpen(value){open=value;$('#research-panel').hidden=!value;document.body.classList.toggle('research-open',value);$('#research-toggle').setAttribute('aria-expanded',String(value));try{localStorage.setItem('research-open',String(value));}catch{}if(value){poll();$('#ai-company').focus();}}
 function rememberDraft(){if(selected)draftByCompany[selected]=$('#ai-question').value;}
-function selectCompany(value){rememberDraft();selected=value;current=null;runs=[];$('#ai-question').value=draftByCompany[selected]||'';$('#ai-result').innerHTML='<p class="hint">Loading company research…</p>';try{localStorage.setItem('research-company',value);}catch{}poll();}
+function selectCompany(value){viewSequence++;rememberDraft();selected=value;current=null;runs=[];$('#ai-question').value=draftByCompany[selected]||'';$('#ai-result').innerHTML='<p class="hint">Loading company research…</p>';try{localStorage.setItem('research-company',value);}catch{}poll();}
 function install(){
  const toggle=document.createElement('button');toggle.id='research-toggle';toggle.type='button';toggle.textContent='Research assistant';toggle.setAttribute('aria-controls','research-panel');toggle.setAttribute('aria-expanded','false');$('.topbar').append(toggle);
  const pane=document.createElement('aside');pane.id='research-panel';pane.className='research-panel';pane.setAttribute('aria-label','AI research assistant');pane.hidden=true;
  pane.innerHTML=`<div class="ai-head"><div><p class="eyebrow">RESEARCH ASSISTANT</p><h2>Evidence to conviction</h2></div><button id="ai-close" type="button" aria-label="Close research assistant">×</button></div>
  <div class="ai-body"><label for="ai-company">Company in focus</label><select id="ai-company"></select>
  <p id="ai-connection" class="hint" role="status">Checking research connection…</p>
- <details id="ai-settings"><summary>Research mandate & limits</summary><form id="ai-settings-form"><p class="hint">Company merits. Portfolio suitability is not assessed.</p><label for="ai-horizon">Valuation horizon (months)</label><input id="ai-horizon" type="number" min="3" max="60" required><label for="ai-criteria">Investment criteria</label><textarea id="ai-criteria" minlength="20" maxlength="3000" required></textarea><label for="ai-limit">Maximum runs per day</label><input id="ai-limit" type="number" min="1" max="30" required><p class="hint">Includes questions and failed runs. Resets at 00:00 UTC. Each review uses up to 3 model requests and 8 web tool calls; a question uses 1 request and up to 4 web tool calls. These are usage limits, not a dollar budget.</p><div class="actions"><button type="submit">Save mandate</button><button type="button" id="ai-settings-reload">Reload saved mandate</button></div><p id="ai-settings-feedback" role="status"></p></form></details>
+ <details id="ai-settings"><summary>Research mandate & limits</summary><form id="ai-settings-form"><p class="hint">Company merits. Portfolio suitability is not assessed.</p><label for="ai-horizon">Valuation horizon (months)</label><input id="ai-horizon" type="number" min="3" max="60" required><label for="ai-criteria">Investment criteria</label><textarea id="ai-criteria" minlength="20" maxlength="3000" required></textarea><label for="ai-limit">Maximum runs per day</label><input id="ai-limit" type="number" min="1" max="30" required><p class="hint">Includes questions and failed runs. Resets at 00:00 UTC. Each review uses up to 3 model requests and 8 web tool calls; EPS research uses 2 requests and up to 4 web tool calls; a question uses 1 request and up to 4 web tool calls. These are usage limits, not a dollar budget.</p><div class="actions"><button type="submit">Save mandate</button><button type="button" id="ai-settings-reload">Reload saved mandate</button></div><p id="ai-settings-feedback" role="status"></p></form></details>
  <div id="ai-setup" class="ai-callout" hidden><strong>Connect research</strong><p>Open “Connect AI.command” in the Investment Research app folder on the server Mac to add your OpenAI API key privately. Then choose Recheck connection.</p><button id="ai-recheck" type="button">Recheck connection</button></div>
  <p class="hint">Starting a run sends this company’s saved notes, evidence, snapshots, scenarios, recent decisions and recent AI conversation to OpenAI. The service searches the public web. Up to 20 recent evidence notes are included.</p>
  <button id="ai-review" type="button" class="primary">Research & recommend</button>
@@ -36,7 +37,7 @@ function install(){
  $('.shell').append(pane);
  toggle.onclick=()=>setOpen(!open);$('#ai-close').onclick=()=>{setOpen(false);toggle.focus();};$('#ai-company').onchange=e=>selectCompany(e.target.value);
  $('#ai-recheck').onclick=()=>poll();$('#ai-review').onclick=()=>start('review');$('#ai-question-form').onsubmit=e=>{e.preventDefault();start('question');};
- $('#ai-history').onchange=async e=>{try{current=await api('runs/'+e.target.value);renderRun();}catch(err){showError(err);}};
+ $('#ai-history').onchange=async e=>{const sequence=++viewSequence,cid=selected,runId=e.target.value;try{const loaded=await api('runs/'+runId);if(sequence!==viewSequence||cid!==selected)return;viewSequence++;current=loaded;renderRun();}catch(err){showError(err);}};
  $('#ai-settings-form').oninput=()=>{settingsDirty=true;};
  $('#ai-settings-reload').onclick=()=>{settingsDirty=false;poll();};
  $('#ai-settings-form').onsubmit=async e=>{
@@ -55,24 +56,24 @@ export function syncResearchPanel(state){
  const next=cid&&workspace.companies.some(c=>c.id===cid)?cid:workspace.companies.some(c=>c.id===selected)?selected:workspace.companies.find(c=>!c.archivedAt)?.id||workspace.companies[0]?.id||'';
  if(next!==selected)selectCompany(next);fillCompanies();if(!status)poll();
 }
-async function start(kind){
+async function start(kind,metricRequest){
  if(pending||!selected)return;pending=true;buttons();$('#ai-feedback').hidden=true;
- try {const run=await api('runs',{companyId:selected,kind,question:kind==='question'?$('#ai-question').value:''});
-  if(run.companyId===selected){current=run;if(kind==='question'){$('#ai-question').value='';draftByCompany[selected]='';}renderRun();}await poll();
+ try {const run=await api('runs',{companyId:selected,kind,question:kind==='question'?$('#ai-question').value:'',...(metricRequest?{metricRequest}:{})});
+  if(run.companyId===selected){viewSequence++;current=run;if(kind==='question'){$('#ai-question').value='';draftByCompany[selected]='';}renderRun();}await poll();
  }catch(e){showError(e);}finally{pending=false;buttons();}
 }
 function buttons(){const archived=workspace?.companies.find(c=>c.id===selected)?.archivedAt;const busy=pending||runs.some(r=>['queued','running'].includes(r.status));const disabled=!status?.configured||!selected||!!archived||busy||status.usedToday>=status.settings.dailyLimit;$('#ai-review').disabled=disabled;$('#ai-ask').disabled=disabled;}
 async function poll(){
- if(pollBusy||!$('#research-panel'))return;pollBusy=true;const cid=selected;
+ if(pollBusy||!$('#research-panel'))return;pollBusy=true;const cid=selected,sequence=viewSequence;
  try{
   const [info,list]=await Promise.all([api('status'),cid?api('runs?companyId='+encodeURIComponent(cid)):Promise.resolve({runs:[]})]);
-  const first=!status;status=info;$('#ai-connection').textContent=`${info.configured?'API key configured':'AI connection needed'} · ${info.usedToday}/${info.settings.dailyLimit} runs today`;
+  const first=!status;status=info;$('#ai-connection').textContent=`${info.configured?'API key configured':'AI connection needed'} · ${info.model}${info.reasoningEffort?' · '+info.reasoningEffort+' reasoning':''} · ${info.usedToday}/${info.settings.dailyLimit} runs today`;
   $('#ai-setup').hidden=info.configured;
   if(first||!settingsDirty){settingsRevision=info.settings.revision;$('#ai-horizon').value=info.settings.horizonMonths;$('#ai-criteria').value=info.settings.criteria;$('#ai-limit').value=info.settings.dailyLimit;}
-  if(cid!==selected)return;runs=list.runs;
-  const history=$('#ai-history');history.innerHTML=runs.length?runs.map(r=>`<option value="${r.id}">${r.kind==='review'?'Assessment':esc(r.question.slice(0,45))} · ${stamp(r.createdAt)} · ${esc(r.status)}</option>`).join(''):'<option value="">No research yet</option>';
-  if(!current&&runs.length){const loaded=await api('runs/'+runs[0].id);if(cid!==selected)return;current=loaded;}
-  else if(current){const latest=await api('runs/'+current.id);if(cid!==selected)return;if(latest.updatedAt!==current.updatedAt||latest.acceptedEvidenceId!==current.acceptedEvidenceId||latest.contextChanged!==current.contextChanged){current=latest;renderRun();}}
+  if(cid!==selected||sequence!==viewSequence)return;runs=list.runs;
+  const history=$('#ai-history');history.innerHTML=runs.length?runs.map(r=>`<option value="${r.id}">${esc(runLabel(r))} · ${stamp(r.createdAt)} · ${esc(r.status)}</option>`).join(''):'<option value="">No research yet</option>';
+  if(!current&&runs.length){const loaded=await api('runs/'+runs[0].id);if(cid!==selected||sequence!==viewSequence)return;current=loaded;}
+  else if(current){const latest=await api('runs/'+current.id);if(cid!==selected||sequence!==viewSequence)return;if(latest.updatedAt!==current.updatedAt||latest.acceptedEvidenceId!==current.acceptedEvidenceId||latest.contextChanged!==current.contextChanged){current=latest;renderRun();}}
   if(current&&cid===selected){history.value=current.id;if($('#ai-result').dataset.run!==current.id)renderRun();}
   else if(!runs.length)$('#ai-result').innerHTML='<div class="ai-empty"><span class="ai-orbit">↗</span><h3>Build an evidence-backed view</h3><p>Start a review to collect sources, challenge the thesis, and produce a recommendation.</p></div>';
   if(location.hash==='#research')await renderResearchInbox();buttons();
@@ -84,7 +85,21 @@ function renderRun(){
  if(['queued','running'].includes(j.status)){out.innerHTML=meta+`<div class="ai-callout"><strong role="status">${esc(j.stage)}</strong><p>You can leave this page. Work continues while the server is running.</p><button id="ai-cancel" type="button">Stop research</button></div>`;$('#ai-cancel').onclick=async()=>{try{current=await api('runs/'+j.id+'/cancel',{});renderRun();await poll();}catch(e){showError(e);}};return;}
  if(j.status!=='completed'){out.innerHTML=meta+`<div class="ai-callout"><strong>${esc(j.stage)}</strong><p>${esc(j.error||'A new run is needed to continue. Previous research and saved notes are preserved.')}</p><p class="hint">No automatic retry was made. Provider usage may still be charged.</p></div>`;return;}
  const sources=`<details><summary>Sources · ${j.sources.length}</summary><p class="hint">Collected during this run. Publication dates are unknown unless stated in the assessment. Citation checks establish source provenance, not factual correctness.</p><ol class="ai-sources">${j.sources.map(s=>`<li>${link(s)}</li>`).join('')}</ol></details>`;
- const context=`<details><summary>Research basis & usage</summary><p class="hint">${esc(j.model)} · prompt version ${j.promptVersion} · ${j.usage.reduce((n,u)=>n+u.inputTokens+u.outputTokens,0).toLocaleString()} reported tokens. This is not a dollar cost.</p>${j.context.omittedEvidenceCount?`<p>${j.context.omittedEvidenceCount} older evidence notes were outside this run’s context.</p>`:''}<pre>${esc(JSON.stringify(j.context,null,2))}</pre></details>`;
+ const context=`<details><summary>Research basis & usage</summary><p class="hint">${esc(j.model)}${j.reasoningEffort?` · ${esc(j.reasoningEffort)} reasoning`:""} · prompt version ${j.promptVersion} · ${j.usage.reduce((n,u)=>n+u.inputTokens+u.outputTokens,0).toLocaleString()} reported tokens. This is not a dollar cost.</p>${j.context.omittedEvidenceCount?`<p>${j.context.omittedEvidenceCount} older evidence notes were outside this run’s context.</p>`:''}<pre>${esc(JSON.stringify(j.context,null,2))}</pre></details>`;
+ if(j.kind==='forward_eps'){
+  const d=j.epsDraft;
+  const rows=[['Forward EPS',d.value===null?'Not verified':`${d.currency||'Currency unknown'} ${d.value} / share`],['Fiscal period',d.period||'Unknown'],['Period end',d.periodEndDate||'Unknown'],['Basis',d.basis||'Unknown'],['Provenance',d.kind],['Share basis',d.shareBasis||'Unknown'],['Source title',d.source?.title||'Unknown'],['Publication date',d.publicationDate||'Unknown'],['Estimate as of',d.estimateAsOfDate||'Unknown']];
+  out.innerHTML=meta+`<div class="ai-verdict"><span class="eyebrow">FORWARD EPS · DRAFT</span><h2>${d.value===null?'Not verified':esc(d.value)}</h2><p>${esc(d.explanation)}</p></div><dl class="ai-field-review">${rows.map(([label,value])=>`<div><dt>${label}</dt><dd>${esc(value)}</dd></div>`).join('')}</dl>${d.source?`<p>${link({...d.source,id:d.sourceId})}</p>`:''}${d.sourceExcerpt?`<blockquote class="note">${esc(d.sourceExcerpt)}</blockquote>`:''}${d.warnings.map(w=>`<p class="ai-callout">${esc(w)}</p>`).join('')}${d.missingFields.length?`<details open><summary>Unknown / missing fields</summary>${stringList(d.missingFields)}</details>`:''}
+  ${d.canFill?`<button id="ai-fill-eps" type="button" class="primary">Fill Forward EPS fields</button><p class="hint">Fills the open snapshot form for ${esc(j.context.company.ticker)}. Review the values and save the snapshot when ready. Unknown fields stay blank.</p>`:'<p class="ai-callout">A sourced value, fiscal period and currency are needed before the agent can fill this field.</p>'}
+  <p><a href="#company/${j.companyId}/snapshots">Open financial snapshots</a></p><p id="ai-fill-feedback" role="status"></p>${sources}${context}`;
+  if($('#ai-fill-eps'))$('#ai-fill-eps').onclick=async e=>{
+   const b=e.target;b.disabled=true;
+   const result=await new Promise(resolve=>window.dispatchEvent(new CustomEvent('ai-forward-eps-selected',{detail:{companyId:j.companyId,draft:d,runId:j.id,onApplied:resolve}})));
+   if(result.ok){$('#ai-fill-feedback').textContent='Fields filled. Review and save the snapshot.';if(innerWidth<=1180)setOpen(false);}
+   else $('#ai-fill-feedback').textContent=result.error;
+   b.disabled=false;
+  };return;
+ }
  if(j.kind==='question'){out.innerHTML=meta+`<h3>${esc(j.question)}</h3><div class="note">${linkedText(j.answer,j.sources)}</div>`+sources+context;return;}
  const r=j.report,computed=j.context.calculations,ref=j.context.referenceSnapshot;
  out.innerHTML=meta+`<div class="ai-verdict"><span class="eyebrow">AI RECOMMENDATION · ${j.acceptedEvidenceId?'REVIEWED EVIDENCE':'DRAFT'}</span><h2>${esc(r.recommendation)}</h2><span class="badge">Evidence confidence: ${esc(r.evidenceConfidence)}</span>${para(r.summary,j.sources)}</div><h3>Why this recommendation</h3>${para(r.rationale,j.sources)}
@@ -106,6 +121,10 @@ function renderRun(){
 export async function renderResearchInbox(){
  const token=++inboxToken;const data=await api('runs');if(location.hash!=='#research'||token!==inboxToken)return;
  const target=$('#ai-inbox-rows');if(!target)return;
- const html=data.runs.length?data.runs.map(r=>`<article class="company-row ai-inbox-row"><div><strong>${esc(r.ticker)}</strong><p class="role">${r.kind==='review'?'Company assessment':esc(r.question.slice(0,120))}</p><small>${stamp(r.createdAt)}</small></div><div><span class="badge">${esc(r.recommendation||r.status)}</span><small>${esc(r.stage)}</small>${r.acceptedEvidenceId?'<small>Saved as evidence</small>':''}</div><button type="button" data-ai-run="${r.id}" data-company="${r.companyId}">Open research</button></article>`).join(''):'<div class="empty"><h2>Your research inbox</h2><p>Completed assessments and follow-up answers will appear here.</p><button type="button" id="ai-inbox-start">Open research assistant</button></div>';
- if(target.innerHTML!==html){target.innerHTML=html;target.querySelectorAll('[data-ai-run]').forEach(b=>b.onclick=async()=>{try{selectCompany(b.dataset.company);fillCompanies();current=await api('runs/'+b.dataset.aiRun);renderRun();setOpen(true);}catch(e){showError(e);}});if($('#ai-inbox-start'))$('#ai-inbox-start').onclick=()=>setOpen(true);}
+ const html=data.runs.length?data.runs.map(r=>`<article class="company-row ai-inbox-row"><div><strong>${esc(r.ticker)}</strong><p class="role">${r.kind==='review'?'Company assessment':r.kind==='forward_eps'?'Forward EPS research':esc(r.question.slice(0,120))}</p><small>${stamp(r.createdAt)}</small></div><div><span class="badge">${esc(r.recommendation||r.status)}</span><small>${esc(r.stage)}</small>${r.acceptedEvidenceId?'<small>Saved as evidence</small>':''}</div><button type="button" data-ai-run="${r.id}" data-company="${r.companyId}">Open research</button></article>`).join(''):'<div class="empty"><h2>Your research inbox</h2><p>Completed assessments and follow-up answers will appear here.</p><button type="button" id="ai-inbox-start">Open research assistant</button></div>';
+ if(target.innerHTML!==html){target.innerHTML=html;target.querySelectorAll('[data-ai-run]').forEach(b=>b.onclick=async()=>{try{selectCompany(b.dataset.company);fillCompanies();const loaded=await api('runs/'+b.dataset.aiRun);if(selected!==b.dataset.company)return;viewSequence++;current=loaded;renderRun();setOpen(true);}catch(e){showError(e);}});if($('#ai-inbox-start'))$('#ai-inbox-start').onclick=()=>setOpen(true);}
+}
+
+export async function researchForwardEPS(companyId,metricRequest){
+ if(selected!==companyId)selectCompany(companyId);fillCompanies();setOpen(true);await start('forward_eps',metricRequest);
 }

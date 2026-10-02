@@ -1,0 +1,19 @@
+{
+  "checks": [
+    {
+      "address": "http://127.0.0.1:5191",
+      "version": "1.1.0",
+      "keyConfigured": false,
+      "researchRuns": 0
+    },
+    {
+      "address": "http://<lan-address>:5191",
+      "version": "1.1.0",
+      "keyConfigured": false,
+      "researchRuns": 0
+    }
+  ],
+  "browser": "Installed setup and empty inbox verified; research controls disabled until key setup",
+  "errors": [],
+  "liveProviderTest": false
+}

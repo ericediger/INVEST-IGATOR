@@ -12,7 +12,7 @@ const paragraph=(text='SYNTHETIC FIXTURE. Research is incomplete.',sourceIds=['S
 const report=()=>({summary:paragraph(),recommendation:'Watch',rationale:paragraph(),evidenceConfidence:'Low',businessQuality:paragraph(),financialAssessment:paragraph(),valuationAssessment:paragraph('No numerical valuation available.',[]),bullCase:[paragraph()],bearCase:[paragraph('Synthetic contrary evidence.',['S2'])],changes:[],assumptions:['Test assumption'],missingEvidence:['No dated snapshot'],invalidationTriggers:['Test trigger'],nextSteps:['Verify a dated price']});
 const response=(text,url='https://example.com/filing',title='Synthetic source')=>({id:'response-test',status:'completed',model:'test-model',usage:{input_tokens:10,output_tokens:20},output:[{type:'message',content:[{type:'output_text',text,annotations:url?[{type:'url_citation',url,title}]:[]}]}]});
 class Provider {
- constructor(){this.model='test-model';this.calls=[];this.enabled=true;}
+ constructor(){this.model='test-model';this.reasoningEffort='medium';this.calls=[];this.enabled=true;}
  configured(){return this.enabled;}
  async request(input){this.calls.push(input);if(input.schema)return response(JSON.stringify(report()),null);return response('SYNTHETIC RESEARCH — not market data.',this.calls.length%2?'https://example.com/filing':'https://example.com/challenge');}
 }
@@ -25,7 +25,7 @@ async function finished(ai,id){for(let i=0;i<200;i++){const run=ai.read(id);if(!
 
 test('three-stage research preserves context, sources, recommendation and usage without mutating workspace',async t=>{
  const {ai,store,provider,cid}=setup(t),before=store.read();const run=ai.enqueue({companyId:cid,kind:'review'});const done=await finished(ai,run.id);
- assert.equal(done.status,'completed');assert.equal(done.report.recommendation,'Watch');assert.equal(done.sources.length,2);assert.equal(done.usage.length,3);assert.equal(provider.calls.length,3);assert.equal(provider.calls[0].search,true);assert.equal(provider.calls[1].search,true);assert.ok(provider.calls[2].schema);assert.deepEqual(store.read(),before);assert.equal(done.context.company.ticker,'ETN');assert.ok(done.fingerprint);assert.equal(done.contextChanged,false);
+ assert.equal(done.reasoningEffort,'medium');assert.equal(ai.status().reasoningEffort,'medium');assert.equal(done.usage[0].reasoningEffort,'medium');assert.equal(done.status,'completed');assert.equal(done.report.recommendation,'Watch');assert.equal(done.sources.length,2);assert.equal(done.usage.length,3);assert.equal(provider.calls.length,3);assert.equal(provider.calls[0].search,true);assert.equal(provider.calls[1].search,true);assert.ok(provider.calls[2].schema);assert.deepEqual(store.read(),before);assert.equal(done.context.company.ticker,'ETN');assert.ok(done.fingerprint);assert.equal(done.contextChanged,false);
 });
 
 test('missing key and daily cap fail before provider work, including follow-up questions',async t=>{
@@ -84,7 +84,7 @@ test('workspace replacement exposes orphaned AI history and prevents accepting i
 
 test('Responses adapter enforces server-only credentials, request bounds and cited output parsing',async()=>{
  let called;const provider=new OpenAIResearchProvider({key:()=> 'sk-SYNTHETIC-NOT-A-REAL-KEY',fetcher:async(url,options)=>{called={url,options};return {ok:true,json:async()=>response('Example text')};}});
- await provider.request({instructions:'test',input:'test',search:true});const body=JSON.parse(called.options.body);assert.equal(called.url,'https://api.openai.com/v1/responses');assert.equal(body.store,false);assert.equal(body.max_tool_calls,4);assert.equal(body.max_output_tokens,6500);assert.equal(body.tools[0].type,'web_search');assert.equal(body.tool_choice,'required');assert.ok(called.options.headers.Authorization);
+ await provider.request({instructions:'test',input:'test',search:true});const body=JSON.parse(called.options.body);assert.equal(called.url,'https://api.openai.com/v1/responses');assert.equal(body.model,'gpt-6-astra');assert.deepEqual(body.reasoning,{effort:'medium'});assert.equal(body.store,false);assert.equal(body.max_tool_calls,4);assert.equal(body.max_output_tokens,6500);assert.equal(body.tools[0].type,'web_search');assert.equal(body.tool_choice,'required');assert.ok(called.options.headers.Authorization);
  const bad=response('test','javascript:alert(1)');assert.equal(responseSources(bad).length,0);assert.throws(()=>responseText({...bad,status:'incomplete'}));
  const good=response('Test [1]','https://example.com/a','A source');good.output[0].content[0].annotations[0].start_index=5;good.output[0].content[0].annotations[0].end_index=8;assert.equal(responseText(good),'Test [A source](https://example.com/a)');
 });
@@ -106,4 +106,12 @@ test('research HTTP endpoints use existing origin protections, return jobs immed
  res=await fetch(root+'/api/research/runs/'+run.id+'/accept',{method:'POST',headers:{...headers,'If-Match':store.read().revision},body:'{}'});assert.equal(res.status,200);
  for(const path of ['/api/research/runs','/api/research/settings','/api/research/runs/'+run.id+'/accept','/api/research/runs/'+run.id+'/cancel'])assert.equal((await fetch(root+path,{method:'POST',headers:{...headers,Origin:'https://attacker.example'},body:'{}'})).status,403);
  const exported=await (await fetch(root+'/api/research/export')).json();assert.equal(exported.runs.length,1);assert.ok(exported.runs[0].acceptedEvidenceId);
+});
+
+test('structured extraction uses the same explicit model and reasoning settings',async()=>{
+ let body;const provider=new OpenAIResearchProvider({key:()=> 'SYNTHETIC',fetcher:async(url,options)=>{body=JSON.parse(options.body);return {ok:true,json:async()=>response('{}')};}});
+ const schema={type:'object',properties:{},additionalProperties:false,required:[]};
+ await provider.request({instructions:'test',input:'test',schema});
+ assert.equal(body.model,'gpt-6-astra');assert.deepEqual(body.reasoning,{effort:'medium'});assert.deepEqual(body.text.format.schema,schema);assert.equal(body.tools,undefined);
+ assert.throws(()=>new OpenAIResearchProvider({key:()=>'',reasoningEffort:'none'}),/Unsupported/);
 });

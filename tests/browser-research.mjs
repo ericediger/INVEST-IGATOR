@@ -53,6 +53,17 @@ try{
   assert.equal(await page.evaluate(()=>window.fixtureXSS),undefined);assert.ok(await page.locator('#ai-result .note a').count());
   await page.reload();await waitFor(page,()=>document.querySelector('#ai-result h3')?.textContent.startsWith('What evidence challenges this?'));
  });
+ await check('late background polling cannot replace a newly selected history item',async()=>{
+  const list=await(await page.request.get(root+'/api/research/runs?companyId='+companies[0].id)).json();
+  const question=list.runs.find(r=>r.kind==='question'),assessment=list.runs.find(r=>r.kind==='review');
+  let release,received;const held=new Promise(r=>release=r),started=new Promise(r=>received=r);let intercepted=false;
+  const pattern=root+'/api/research/runs/'+question.id;
+  await page.route(pattern,async route=>{if(!intercepted){intercepted=true;received();await held;}await route.continue();});
+  await Promise.race([started,new Promise((_,reject)=>setTimeout(()=>reject(new Error('Expected a background history poll')),6000))]);
+  await page.locator('#ai-history').selectOption(assessment.id);await page.locator('.ai-verdict').waitFor();release();
+  await page.waitForTimeout(300);assert.ok(await page.locator('.ai-verdict').isVisible());
+  await page.unroute(pattern);
+ });
  await check('settings retain a dirty draft when another client saves; stale save is rejected',async()=>{
   await page.locator('#ai-settings summary').click();await page.locator('#ai-criteria').fill('Browser local mandate draft with sufficient length.');
   const info=await(await page.request.get(root+'/api/research/status')).json();const {revision,...settings}=info.settings;
@@ -69,11 +80,31 @@ try{
   await page.setViewportSize({width:390,height:844});await page.locator('#research-toggle').click();
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
   const box=await page.locator('#research-panel').boundingBox();assert.ok(box.x>=0&&box.width<=391);
-  await page.locator('#ai-history').selectOption({index:1});await page.locator('.ai-verdict').waitFor();await page.locator('.ai-verdict').scrollIntoViewIfNeeded();
+  const list=await(await page.request.get(root+'/api/research/runs?companyId='+companies[0].id)).json();const reviewId=list.runs.find(r=>r.kind==='review').id;await page.locator('#ai-history').selectOption(reviewId);await page.waitForFunction(id=>document.querySelector('#ai-result').dataset.run===id,reviewId);await page.locator('.ai-verdict').waitFor();await page.locator('.ai-verdict').scrollIntoViewIfNeeded();
   await page.screenshot({path:out+'/mobile-assessment.png',fullPage:true});await page.locator('#ai-close').click();assert.equal(await page.locator('#research-panel').isVisible(),false);
  });
  await check('200%-equivalent CSS viewport fits and panel remains operable',async()=>{
   await page.setViewportSize({width:720,height:500});await page.locator('#research-toggle').click();assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);await page.locator('#ai-close').click();
+ });
+ await check('agent fills forward EPS fields and leaves unrelated snapshot inputs intact',async()=>{
+  await page.setViewportSize({width:1440,height:1000});await page.goto(root+'/#company/'+companies[0].id+'/snapshots');
+  await page.locator('#snapshot-form').waitFor();await page.locator('#price').fill('123.45');await page.locator('#quoteDate').fill('2026-09-06');
+  await page.locator('#priceBasis').fill('Synthetic closing price');await page.locator('#priceSourceTitle').fill('SYNTHETIC price source');
+  await page.locator('details.optional-metric').first().locator('summary').click();await page.locator('#research-forward-eps').click();
+  await page.locator('#ai-fill-eps').waitFor({timeout:20000});await page.locator('#ai-fill-eps').click();
+  assert.equal(await page.locator('#forwardEPSValue').inputValue(),'7.25');assert.equal(await page.locator('#forwardEPSPeriod').inputValue(),'FY 2027 analyst consensus');assert.equal(await page.locator('#forwardEPSBasis').inputValue(),'Adjusted diluted EPS');assert.equal(await page.locator('#forwardEPSKind').inputValue(),'Analyst estimate');assert.equal(await page.locator('#forwardEPSPublication').inputValue(),'');
+  assert.ok((await page.locator('#forwardEPSURL').inputValue()).startsWith('https://example.com/'));assert.equal(await page.locator('#currency').inputValue(),'USD');assert.equal(await page.locator('#shareBasis').inputValue(),'Diluted common share');assert.equal(await page.locator('#price').inputValue(),'123.45');assert.equal(await page.locator('#priceBasis').inputValue(),'Synthetic closing price');
+  const before=(await(await page.request.get(root+'/api/workspace')).json()).workspace;assert.equal(before.snapshots.length,0);
+  await page.locator('#forwardEPSValue').scrollIntoViewIfNeeded();await page.screenshot({path:out+'/forward-eps-filled.png',fullPage:true});
+ });
+ await check('EPS fill blocks mismatched currencies and preserves an existing field on cancelled replacement',async()=>{
+  await page.locator('#currency').selectOption('EUR');await page.locator('#ai-fill-eps').click();await waitFor(page,()=>document.querySelector('#ai-fill-feedback').textContent.includes('snapshot uses EUR'));assert.equal(await page.locator('#currency').inputValue(),'EUR');
+  await page.locator('#currency').selectOption('USD');await page.locator('#forwardEPSValue').fill('8.5');await page.locator('#ai-fill-eps').click();await page.locator('#confirm-cancel').click();assert.equal(await page.locator('#forwardEPSValue').inputValue(),'8.5');
+  await page.locator('#ai-fill-eps').click();await page.locator('#confirm-ok').click();assert.equal(await page.locator('#forwardEPSValue').inputValue(),'7.25');
+ });
+ await check('reviewed agent fields save through the normal snapshot workflow with nullable source date',async()=>{
+  await page.locator('#snapshot-form button[type=submit]').click();await page.locator('.copy-snapshot').waitFor();
+  const data=(await(await page.request.get(root+'/api/workspace')).json()).workspace;assert.equal(data.snapshots.length,1);assert.equal(data.snapshots[0].forwardEPS.value,7.25);assert.equal(data.snapshots[0].forwardEPS.source.publicationDate,null);assert.equal(data.snapshots[0].forwardEPS.kind,'Analyst estimate');assert.equal(data.snapshots[0].price.value,123.45);
  });
  assert.deepEqual(errors,[]);checks.push('No browser JavaScript errors');
  writeFileSync(out+'/results.json',JSON.stringify({checks,errors,provider:'Synthetic only; no OpenAI calls',viewportSizes:['1440×1000','390×844','720×500 (200%-equivalent)']},null,2));

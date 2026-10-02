@@ -72,3 +72,23 @@ A consistent online copy of the installed database was created in a disposable d
 **Live provider test:** not run. No OpenAI API key was present in the current environment or installed service configuration. Synthetic provider fixtures establish workflow behavior, not real-model research quality or account access.
 
 The source is prepared and browser-verified as 1.1.0. Release activation is verified separately below. `scripts/upgrade-ai.py` creates a new release, backs up the installed database before switching, verifies workspace equality and research availability afterward, and reverts the application symlink if activation verification fails. The private key setup launcher is created during activation.
+
+### Installed release verification
+
+Release **1.1.0** was activated on September 7, 2026 UTC. The original 1.0.1 release remains available for application rollback. The complete saved workspace and its optimistic revision matched before and after activation. New AI tables were added without modifying existing research records.
+
+Pre-upgrade backup: `backup-2026-09-07T03-05-20-603Z-996369d2-44ff-4b83-b0d9-f8348559c161.sqlite`.
+Post-upgrade backup: `backup-2026-09-07T03-05-28-052Z-ee15b392-cf54-445e-bf0d-4c8d8efd7751.sqlite`.
+
+Both existing addresses, `http://127.0.0.1:5191` and `http://<lan-address>:5191`, served version 1.1.0 and the research endpoints. An isolated browser session verified the installed setup prompt and empty research inbox with no JavaScript errors. Research controls are disabled because no API key is configured. No paid provider call or production research run was made. The key-setup launcher was created in the installed app folder and passed shell syntax validation. `verification/installed-ai.json` records the installed checks.
+
+
+## Release 1.2.0 — agent-assisted Forward EPS
+
+37 automated tests passed after adding EPS draft validation and two-stage provider orchestration checks. 15 browser checks passed, covering the new research action, complete field filling, preserving unrelated form data, unknown publication dates, currency conflict rejection, cancellation of replacement, normal snapshot saving, and a deliberate late-poll regression for history selection. The workspace/database schema and existing saved financial records are unchanged.
+
+A bounded live integration check used public Eaton seed information in a disposable database with the configured OpenAI key. Two Responses requests succeeded, returning model `gpt-5.4-2026-03-05`. The lookup returned a sourced fiscal-year analyst estimate while leaving accounting basis, share basis and publication date unknown. The local validator was then adjusted to allow partial field filling with explicit missing-metadata warnings; the recorded live response was revalidated locally without another API call. This confirms actual provider access and extraction, not comprehensive financial-data accuracy. No production notes or financial records were changed by the live test. See `verification/live-eps.json`.
+
+The requested model migration sets `gpt-6-astra` and explicit `reasoning.effort: "medium"` on every Responses request. Status and saved runs record the effort; historical runs retain their original model metadata. All 38 automated tests and source syntax checks passed, including search and structured-extraction request contracts. Official compatibility guidance: https://developers.openai.com/api/docs/guides/latest-model?model=gpt-6-astra.
+
+A fresh live EPS run completed both web research and structured extraction using `gpt-6-astra` with `medium` reasoning, confirmed in both provider responses. It produced a fillable cited estimate with a publication date, leaving unsupported accounting/share-basis metadata unknown. The test used only seeded public company data and a disposable database; production records were not modified. Results: `verification/live-eps-gpt-6-astra.json`.

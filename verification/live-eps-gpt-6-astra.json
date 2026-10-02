@@ -1,0 +1,41 @@
+{
+  "status": "completed",
+  "model": "gpt-6-astra",
+  "reasoningEffort": "medium",
+  "error": null,
+  "canFill": true,
+  "value": 13.51,
+  "period": "FY2026 ending December 2026",
+  "basis": null,
+  "currency": "USD",
+  "source": {
+    "title": "All You Need to Know About Eaton (ETN) Rating Upgrade to Buy - August 28, 2026 - Zacks.com",
+    "url": "https://www.zacks.com/stock/news/2982040/all-you-need-to-know-about-eaton-etn-rating-upgrade-to-buy?utm_source=openai",
+    "publicationDate": "2026-08-28"
+  },
+  "missingFields": [
+    "periodEndDate",
+    "GAAP or adjusted basis",
+    "Share basis",
+    "Estimate as-of date"
+  ],
+  "usage": [
+    {
+      "stage": "1 of 2 · Finding a sourced forward EPS estimate",
+      "responseId": "resp_redacted",
+      "model": "gpt-6-astra",
+      "reasoningEffort": "medium",
+      "inputTokens": 39296,
+      "outputTokens": 1369
+    },
+    {
+      "stage": "2 of 2 · Preparing the EPS fields",
+      "responseId": "resp_redacted",
+      "model": "gpt-6-astra",
+      "reasoningEffort": "medium",
+      "inputTokens": 2020,
+      "outputTokens": 284
+    }
+  ],
+  "productionModified": false
+}
