@@ -1,4 +1,6 @@
-# Investment Research — local MVP 1.3.0
+# Investment Research — local MVP 1.3.1
+
+For the October 2 product direction and the distinction between shipped features and the agreed next workflow, read [Workflow alignment](docs/WORKFLOW-ALIGNMENT.md). The Watch-only dashboard, unified dispositions and actual-versus-modeled group comparison described there are not yet implemented in 1.3.1.
 
 Open **http://<lan-address>:5191** from your trusted home network, or **http://127.0.0.1:5191** on the server Mac. The watchlist is seeded with ETN, VRT, NVT, APH, PWR, FIX and ANET. Financial values start blank. No household account data was imported.
 
