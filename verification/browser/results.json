@@ -1,0 +1,22 @@
+{
+  "checks": [
+    "desktop panel opens, selects a company, and stays mounted during navigation",
+    "company navigation keeps separate question drafts",
+    "review runs to completion with inline citations and saved research basis",
+    "accepting a review preserves an unsaved main-form draft and saves exactly one evidence note",
+    "inbox opens the saved assessment and history survives a browser reload",
+    "follow-up answer links sources and escapes source HTML",
+    "settings retain a dirty draft when another client saves; stale save is rejected",
+    "Escape closes the panel and returns focus to its launcher",
+    "mobile panel and report fit the viewport",
+    "200%-equivalent CSS viewport fits and panel remains operable",
+    "No browser JavaScript errors"
+  ],
+  "errors": [],
+  "provider": "Synthetic only; no OpenAI calls",
+  "viewportSizes": [
+    "1440×1000",
+    "390×844",
+    "720×500 (200%-equivalent)"
+  ]
+}

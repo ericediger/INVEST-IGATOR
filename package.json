@@ -1,6 +1,6 @@
 {
   "name": "investment-research",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "private": true,
   "type": "module",
   "engines": {
@@ -11,7 +11,8 @@
     "test": "node --test tests/*.test.js",
     "check": "node scripts/check.js",
     "build": "npm run check",
-    "backup": "node scripts/backup.js"
+    "backup": "node scripts/backup.js",
+    "configure-ai": "node scripts/configure-ai.js"
   },
   "dependencies": {
     "express": "4.22.2",

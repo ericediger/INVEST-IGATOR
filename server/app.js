@@ -13,7 +13,7 @@ export function createApp(store,options={}) {
     next();
   });
   app.use(express.json({limit:'5mb',strict:true}));
-  app.get('/api/workspace',(req,res)=>res.json({...store.read(),today:today(),access:policy.label,accessDescription:policy.description,version:'1.0.1'}));
+  app.get('/api/workspace',(req,res)=>res.json({...store.read(),today:today(),access:policy.label,accessDescription:policy.description,version:'1.1.0'}));
   app.get('/api/health',(req,res)=>res.json({ok:true,schemaVersion:1}));
   app.get('/api/export',(req,res)=>res.attachment(`investment-research-${today()}.json`).json(store.export()));
   app.get('/api/backups',(req,res)=>res.json({backups:store.backupStatus()}));
@@ -21,11 +21,23 @@ export function createApp(store,options={}) {
   app.post('/api/restore/preview',(req,res,next)=>{try{const {workspace,...preview}=store.preview(req.body); res.json({...preview,revision:store.read().revision});}catch(e){next(e);}});
   app.post('/api/restore',(req,res,next)=>{try{res.json(store.restore(req.headers['if-match'],req.body.export,req.body.digest,req.body.confirmation));}catch(e){next(e);}});
   app.post('/api/backup',async(req,res,next)=>{try{res.json({backup:await store.backup()});}catch(e){next(e);}});
+  const research=options.research;
+  if(research) {
+    const route=fn=>(req,res,next)=>{try{fn(req,res);}catch(e){next(e);}};
+    app.get('/api/research/status',route((req,res)=>res.json(research.status())));
+    app.get('/api/research/runs',route((req,res)=>res.json({runs:research.list(typeof req.query.companyId==='string'?req.query.companyId:null)})));
+    app.get('/api/research/runs/:id',route((req,res)=>res.json(research.read(req.params.id))));
+    app.post('/api/research/runs',route((req,res)=>res.status(202).json(research.enqueue(req.body))));
+    app.post('/api/research/runs/:id/cancel',route((req,res)=>res.json(research.cancel(req.params.id))));
+    app.post('/api/research/runs/:id/accept',route((req,res)=>res.json(research.accept(req.params.id,req.headers['if-match'],req.body.acknowledgeChanged===true))));
+    app.post('/api/research/settings',route((req,res)=>res.json(research.saveSettings(req.body,req.headers['if-match']))));
+    app.get('/api/research/export',route((req,res)=>res.attachment(`investment-research-ai-${today()}.json`).json(research.export())));
+  }
   app.use(express.static(fileURLToPath(new URL('../public',import.meta.url)),{dotfiles:'deny',index:'index.html',etag:false}));
   app.use((req,res)=>res.status(404).json({error:'Not found'}));
   app.use((error,req,res,next)=>{
     const status=error.type==='entity.too.large'?413:error instanceof SyntaxError?400:error.status||500;
-    res.status(status).json({error:status===500?'Save unavailable. Your draft is preserved; retry shortly.':status===413?'Import exceeds the 5 MB limit.':error.message});
+    res.status(status).json({error:status===500?'Save unavailable. Your draft is preserved; retry shortly.':error.type==='entity.too.large'?'Import exceeds the 5 MB limit.':error.message});
     if(status===500) console.error('Request failed:',error.code||error.name); // no notes, payloads or credentials
   });
   return app;

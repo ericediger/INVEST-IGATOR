@@ -49,3 +49,26 @@ Browser acceptance remains the only uncompleted verification area; do not descri
 ## Release 1.0.1 — home-network access verification
 
 Production syntax checks passed; **18 tests passed, 0 failed**. The expanded test suite covers explicit private-network configuration, rejection of public/all-interface/mismatched subnet settings, exact Host and peer-subnet allowlists, LAN-origin page/API reads and saving, shared data through both supported addresses, forged forwarding headers and cross-origin write rejection. Installed release 1.0.1 was verified through both http://<lan-address>:5191 and http://127.0.0.1:5191. The LAN page and API returned successfully, and the complete saved workspace matched its pre-update state. Listener inspection confirmed exactly those two IPv4 bindings on port 5191. A pre-update database backup was created and release 1.0.0 plus its prior service configuration were retained. The existing macOS firewall was found disabled; no firewall setting was changed. The earlier browser-tool limitation remains unchanged.
+
+## Release 1.1.0 — AI research implementation
+
+September 7, 2026 UTC. **32 tests passed, 0 failed** after a clean locked-dependency installation. The initial sandboxed run could not open temporary loopback servers; all tests subsequently passed with local-network execution allowed. `npm run build` and `git diff --check` passed. The dependency audit reported zero vulnerabilities; runtime dependency versions are unchanged.
+
+New checks cover:
+
+- Three-stage evidence → counterevidence → structured recommendation orchestration with source registries and per-stage reported usage.
+- Missing API key, daily usage limits, settings conflicts, duplicate pending runs and bounded provider requests.
+- Source-reference validation and the recent-price/complete-scenario prerequisite for a Consider recommendation.
+- Persistent company-specific conversations and absence of cross-company history in another company's requests.
+- Reviewed evidence acceptance, changed-context acknowledgment, optimistic conflicts and idempotent acceptance; no automatic decision mutations.
+- Cancellation and rejection of late results, malformed/provider errors without automatic retry, and restart interruption without duplicate paid calls.
+- AI tables and acceptance mappings included in SQLite backup, archived history after workspace-only replacement, and orphaned-company acceptance rejection.
+- Server-only API key handling, file permissions, source URL filtering, clickable citation conversion, request contract and HTTP access protections.
+
+A consistent online copy of the installed database was created in a disposable directory. Initializing AI tables preserved the exact workspace and revision. A subsequent SQLite backup included the new tables and passed integrity checks. Production was not modified by this verification.
+
+**Browser acceptance passed after the user authorized an alternative browser.** Eleven checks passed in an isolated headless Chrome session using a disposable test server and synthetic provider. Desktop (1440×1000), mobile (390×844), and a 720×500 CSS viewport equivalent to a 200% desktop layout had no horizontal overflow. Verified mounted panel navigation, per-company question drafts, completed cited assessments, saved basis, evidence acceptance preserving an unsaved main form, inbox/history after reload, source-link rendering and HTML escaping, settings conflict handling, Escape focus return, and absence of JavaScript errors. Screenshots were visually inspected. This is viewport emulation, not a claim of a physical mobile-device test or native browser zoom. Results and screenshots are under `verification/browser/`; rerun with `node tests/browser-research.mjs` after installing Playwright in a temporary directory (override `PLAYWRIGHT_MODULE_PATH` if necessary). The test uses the locally installed Google Chrome binary and never calls OpenAI.
+
+**Live provider test:** not run. No OpenAI API key was present in the current environment or installed service configuration. Synthetic provider fixtures establish workflow behavior, not real-model research quality or account access.
+
+The source is prepared and browser-verified as 1.1.0. Release activation is verified separately below. `scripts/upgrade-ai.py` creates a new release, backs up the installed database before switching, verifies workspace equality and research availability afterward, and reverts the application symlink if activation verification fails. The private key setup launcher is created during activation.

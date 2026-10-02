@@ -44,3 +44,18 @@ Decisions embed a full immutable copy of the company revision, selected evidence
 Errors: 400 invalid data; 403 access/origin blocked; 404 unknown resource; 409 conflict (reload, compare and explicitly reapply); 413 body too large; 500 unavailable save/backup. The client must keep drafts after any unsuccessful write. Do not retry a conflicting full company record blindly. For a proposed research update, fetch the record and revision, validate the proposed fields, apply only approved changes, send the complete resulting company input with If-Match, and inspect the returned state.
 
 The executable schema definitions in `server/model.js` are authoritative and strict. JSON exports expose every documented field, so an agent can inspect the exact shape without ad hoc SQL.
+
+## AI research (1.1.0)
+
+All routes inherit the existing Host, peer-network, Origin and JSON mutation protections.
+
+- `GET /api/research/status`: key-present status (never key), configured model, mandate revision, daily usage.
+- `POST /api/research/settings`: `{horizonMonths, criteria, dailyLimit}`, with settings revision in `If-Match`.
+- `POST /api/research/runs`: `{companyId, kind: "review"|"question", question?: string}` → 202 and persisted job. Request returns before provider work.
+- `GET /api/research/runs?companyId=<uuid>`: latest 100 runs; omit companyId for inbox.
+- `GET /api/research/runs/:id`: immutable captured context and completed content, status, source registry, usage and current-context comparison.
+- `POST /api/research/runs/:id/cancel`: `{}`. Queued/running → cancelled, abort request, no late result publication.
+- `POST /api/research/runs/:id/accept`: `{acknowledgeChanged?: boolean}` and current workspace `If-Match`. Adds evidence once; never adds a decision.
+- `GET /api/research/export`: complete, read-only AI archive JSON (separate from workspace JSON).
+
+Runs progress queued → running → completed/failed/cancelled. Queued/running runs found on service restart become interrupted; retry is a new, user-started run. Research notes and financial workspace do not change during provider work.

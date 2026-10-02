@@ -1,6 +1,10 @@
-# Investment Research — local MVP 1.0.1
+# Investment Research — local MVP 1.1.0
 
 Open **http://<lan-address>:5191** from your trusted home network, or **http://127.0.0.1:5191** on the server Mac. The watchlist is seeded with ETN, VRT, NVT, APH, PWR, FIX and ANET. Financial values start blank. No household account data was imported.
+
+## AI research
+
+Open **Research assistant** in the top bar for company research, a contrary-evidence review, recommendations, and persistent follow-up questions. Open **AI research** for the research inbox. Connect a server-side OpenAI API key using **Connect AI.command** in the installed app folder. New AI functionality is documented in `docs/AI-RESEARCH.md`, including usage limits, data sent externally, evidence review, and recovery. Live research requires a funded API project.
 
 ## Everyday use
 
@@ -94,6 +98,6 @@ Use an atomic symlink replacement (`current.next` → `current`) so the active p
 
 ## Scope and limits
 
-Manual data only. No live quotes, feeds, consensus lookup, correlations, actual portfolio/holdings/performance, broker connections, investment recommendations, paid services, public sharing or notifications. Review dates and triggers are displayed, not pushed as alerts. Currency and listing start unknown; users must verify them. Source links are stored for provenance and are not fetched or independently verified by this application. Evidence is plain text, not rich HTML. Arithmetic uses finite JavaScript numbers with no intermediate rounding; display rounds to four fractional digits. Single-household workspace, modest concurrency, 4 MB workspace / 5 MB request/import limit and whole-workspace conflict checks. Daily age calculations use America/New_York calendar dates.
+Financial snapshots remain manual. Optional AI company research and recommendations use paid OpenAI API requests and web search after a server key is configured. No live quote feed, automatic consensus import, correlations, actual portfolio/holdings/performance, broker connections, public sharing or notifications. Review dates and triggers are displayed, not pushed as alerts. Currency and listing start unknown; users must verify them. Manual source links are stored for provenance; AI runs use web search and retain returned citations. Source provenance checks do not establish factual correctness. Evidence is plain text, not rich HTML. Arithmetic uses finite JavaScript numbers with no intermediate rounding; display rounds to four fractional digits. Single-household workspace, modest concurrency, 4 MB workspace / 5 MB request/import limit and whole-workspace conflict checks. Daily age calculations use America/New_York calendar dates.
 
 See `docs/API.md`, `docs/ARCHITECTURE.md` and `TEST-RESULTS.md` for engineering details and actual verification.

@@ -19,3 +19,11 @@ Official guidance checked September 6, 2026:
 ## Release 1.0.1 — confirmed home-network access
 
 The owner confirmed “Trusted home network; no login.” The installed app now binds to 127.0.0.1 and the specific private IPv4 address <lan-address>, accepting peers only in loopback or <trusted-subnet>. Each request must use an exact configured Host; writes must match that Host's Origin. No proxy trust, wildcard origin, public listener, router or firewall change is introduced. Access is deliberately shared with every trusted LAN device, with no app login or TLS. The UI reports the active boundary and identifies the server as the data location. This supersedes the initial loopback-only installation note above. Schema and persistence are unchanged.
+
+## Release 1.1.0 — AI research service
+
+The existing Express process now owns an optional OpenAI-backed research service. Additive SQLite tables hold settings, queued/running/completed research, captured company context, provider source references, token usage, and accepted-evidence mappings. A single in-process worker performs web research, a separate counterevidence search, and structured assessment. Follow-up questions perform their own web search with bounded company-specific history. HTTP requests enqueue durable jobs and return immediately; the browser polls progress.
+
+The persistent right panel is mounted outside the main route-rendering element. Company page navigation updates its focus; the inbox offers historical run selection. No model-generated HTML executes. Citations are rendered from HTTP(S) source references returned by the API. Accepting a report appends an AI-authored evidence note using the same workspace revision checks as manual edits, with an idempotency mapping committed in the same SQLite transaction.
+
+No scheduler, trade execution, portfolio suitability analysis or automatic financial snapshot ingestion is included. The first release operates on demand; see `AI-RESEARCH.md` for setup, transmission scope, usage bounds and recovery semantics.
