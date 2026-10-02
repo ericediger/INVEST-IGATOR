@@ -6,7 +6,7 @@ import {parse} from './model.js';
 import {clampOutput} from './bounds.js';
 
 const CURRENCIES=new Set(Intl.supportedValuesOf('currency'));
-const SNAPSHOT_BOUNDS={arrays:{operatingMetrics:12,history:5,missing:25,sourceIds:30},strings:{notes:4000,name:120,ticker:300,exchange:300,listingCountry:300,quoteCurrency:300,reportingCurrency:300,fiscalYearEnd:300,periodLabel:300,basis:300,currency:300,asOfDate:300,asOfTime:300,unit:300,forwardEPSPeriod:300,forwardRevenuePeriod:300,periodEndDate:300,sourceId:300,missing:300}};
+const SNAPSHOT_BOUNDS={arrays:{operatingMetrics:12,history:5,missing:25,sourceIds:30},strings:{notes:4000,name:120,ticker:300,exchange:300,listingCountry:300,quoteCurrency:300,reportingCurrency:300,fiscalYearEnd:300,periodLabel:300,basis:1000,currency:300,asOfDate:300,asOfTime:300,unit:300,forwardEPSPeriod:300,forwardRevenuePeriod:300,periodEndDate:300,sourceId:300,missing:300}};
 const PERIOD_TYPES=['FY','TTM','H1','H2','Q1','Q2','Q3','Q4','Unknown'];
 const SECURITY_TYPES=['Common','ADR','GDR','Other'];
 const dateRe=/^\d{4}-\d{2}-\d{2}$/;
@@ -21,7 +21,7 @@ export const snapshotDraftSchema=block({
  shares:block({basicOutstanding:num,dilutedOutstanding:num,asOfDate:str,basis:str,sourceId:str}),
  marketCap:block({value:num,currency:str,asOfDate:str,sourceId:str}),
  enterpriseValue:block({value:num,currency:str,asOfDate:str,sourceId:str}),
- financials:block({periodLabel:str,periodType:z.enum(PERIOD_TYPES),periodEndDate:str,basis:str,currency:str,revenue:num,ebitda:num,ebit:num,netIncome:num,dilutedEPS:num,operatingCashFlow:num,capitalExpenditure:num,freeCashFlow:num,totalDebt:num,cashAndEquivalents:num,sourceIds:ids}),
+ financials:block({periodLabel:z.string().max(600).nullable(),periodType:z.enum(PERIOD_TYPES),periodEndDate:str,basis:z.string().max(1000).nullable(),currency:str,revenue:num,ebitda:num,ebit:num,netIncome:num,dilutedEPS:num,operatingCashFlow:num,capitalExpenditure:num,freeCashFlow:num,totalDebt:num,cashAndEquivalents:num,sourceIds:ids}),
  growth:block({revenueGrowthPct:num,epsGrowthPct:num,periodLabel:str,sourceIds:ids}),
  history:z.array(block({periodLabel:str,periodEndDate:str,revenue:num,ebitda:num,netIncome:num,freeCashFlow:num,sourceIds:ids})).max(5),
  consensus:block({forwardEPS:num,forwardEPSPeriod:str,forwardRevenue:num,forwardRevenuePeriod:str,targetPrice:num,currency:str,asOfDate:str,sourceId:str}),
@@ -52,7 +52,7 @@ Report, with a clickable citation and its date for each item:
 2. Shares outstanding: basic shares outstanding at the most recent date disclosed (for example the cover page of the latest filing) with the date and share class, and the diluted weighted-average share count for the latest period as a reference figure.
 3. Market capitalization and enterprise value only if a source states them; otherwise leave them unavailable — the app derives them.
 4. Latest financials: trailing twelve months if available from sources, otherwise the latest fiscal year; state the period label, period end date, accounting basis (IFRS, US GAAP, adjusted/non-GAAP), reporting currency, revenue, EBITDA, EBIT/operating income, net income attributable to shareholders, diluted EPS, operating cash flow, capital expenditure, free cash flow, total debt and cash and equivalents. Total debt is the balance-sheet total if stated; otherwise add the short-term debt, current portion of long-term debt and long-term debt lines from the same balance sheet date and say so in notes (exclude operating lease liabilities unless the company includes them in debt). Cash and equivalents is the cash and cash equivalents line; note if short-term investments are combined. If trailing-twelve-month cash-flow items are not published, leave those TTM fields unavailable and report the latest fiscal-year operating cash flow, capital expenditure and free cash flow in the history block. Use FULL currency units (e.g. 3274000000 for 3,274 million), never millions or billions.
-5. Growth: revenue growth and EPS growth for the latest period versus the prior-year period, and revenue, EBITDA, net income and free cash flow for up to three prior fiscal years for historical growth and profitability.
+5. Growth: revenue growth and EPS growth for the latest period versus the prior-year period, and revenue, EBITDA, net income and free cash flow for up to three completed fiscal years (full years only, each with its fiscal year-end date; never quarters, half-years or trailing periods) for historical growth and profitability.
 6. Consensus: forward EPS and forward revenue with the fiscal period they refer to, the analyst price target if available, currency, and the date the consensus was reported. Only published analyst estimates; management guidance is not consensus.
 7. Up to eight sector-specific operating metrics the market uses for this company (for example backlog, book-to-bill, order intake, same-store sales, net interest margin, CET1 ratio, subscribers, capacity, utilization) with units and period. Financial statement line items belong in the financials or history blocks, never here.
 Distinguish observed facts from estimates. Do not compute ratios, convert currencies, annualize quarterly figures or infer missing values. If sources disagree, say which was used and why. Unknown items stay unknown. Do not claim a paywalled source was read.`;
@@ -148,16 +148,38 @@ export function normalizeSnapshot(raw,sources,asOf){
   else { const h=[...history].reverse().find(h=>h.freeCashFlow!==null); if(h){m.fcfYield=h.freeCashFlow/marketCap.value*100;derived.fcfYieldBasis=`${h.periodLabel||h.periodEndDate} free cash flow (latest fiscal year; TTM unavailable)`;warnings.push(`FCF yield uses ${h.periodLabel||h.periodEndDate} free cash flow because trailing-twelve-month free cash flow was not reported.`);} }
  }
  if(usable&&derived.netDebt!==null&&financials.ebitda>0) m.netDebtEbitda=derived.netDebt/financials.ebitda;
- const rev=history.filter(h=>h.revenue>0);
- if(rev.length>=2){ const first=rev[0],last=rev.at(-1),years=rev.length-1; derived.historicalGrowth={revenueCagrPct:(Math.pow(last.revenue/first.revenue,1/years)-1)*100,years,from:first.periodLabel,to:last.periodLabel}; if(derived.revenueGrowthPct===null){derived.revenueGrowthPct=(last.revenue/rev.at(-2).revenue-1)*100;derived.revenueGrowthSource=`derived from ${rev.at(-2).periodLabel} to ${last.periodLabel}`;} }
  for(const [k,v] of Object.entries(m)) if(v!==null&&!Number.isFinite(v)) m[k]=null;
 
  const labels={price:'Share price',shares:'Shares outstanding',marketCap:'Market capitalization',enterpriseValue:'Enterprise value',revenue:'Revenue',ebitda:'EBITDA',ebit:'EBIT',netIncome:'Net income',freeCashFlow:'Free cash flow',netDebt:'Net debt',forwardEPS:'Forward EPS consensus',revenueGrowth:'Revenue growth'};
- const have={price:price.value,shares:shareCount,marketCap:marketCap.value,enterpriseValue:enterpriseValue.value,revenue:financials.revenue,ebitda:financials.ebitda,ebit:financials.ebit,netIncome:financials.netIncome,freeCashFlow:financials.freeCashFlow,netDebt:derived.netDebt,forwardEPS:consensus.forwardEPS,revenueGrowth:derived.revenueGrowthPct};
+ const grown=rederiveGrowth({identity,price,shares,marketCap,enterpriseValue,financials,growth,history,consensus,operatingMetrics,derived,notes:d.notes,quality:{warnings,missing:[]},asOf});
+ const have={price:price.value,shares:shareCount,marketCap:marketCap.value,enterpriseValue:enterpriseValue.value,revenue:financials.revenue,ebitda:financials.ebitda,ebit:financials.ebit,netIncome:financials.netIncome,freeCashFlow:financials.freeCashFlow,netDebt:derived.netDebt,forwardEPS:consensus.forwardEPS,revenueGrowth:grown.derived.revenueGrowthPct};
  for(const [k,label] of Object.entries(labels)) if(have[k]===null&&!missing.some(x=>x.toLowerCase().includes(label.toLowerCase()))) missing.push(label);
  const comparable=price.value!==null&&financials.revenue!==null&&!!financials.currency&&!financials.scaledUnitsSuspected;
- const quality={warnings,missing,priceAgeDays:price.ageDays,periodAgeDays:financials.periodAgeDays,currencyMismatch,scaledUnitsSuspected:financials.scaledUnitsSuspected,comparable,shareBasisUsed:derived.marketCapBasis,freshPrice:price.value!==null&&price.ageDays!==null&&price.ageDays<=7,hasValuationMultiple:Object.values(m).some(v=>v!==null)};
- return {identity,price,shares,marketCap,enterpriseValue,financials,growth,history,consensus,operatingMetrics,derived,notes:d.notes,quality,asOf};
+ const quality={warnings:grown.quality.warnings,missing,priceAgeDays:price.ageDays,periodAgeDays:financials.periodAgeDays,currencyMismatch,scaledUnitsSuspected:financials.scaledUnitsSuspected,comparable,shareBasisUsed:derived.marketCapBasis,freshPrice:price.value!==null&&price.ageDays!==null&&price.ageDays<=7,hasValuationMultiple:Object.values(m).some(v=>v!==null)};
+ return {...grown,quality};
+}
+
+// Historical growth is only meaningful across fiscal-year observations. Partial periods (quarters, half-years) that the
+// model may include in history are excluded, and derived year-over-year growth is used only when reported growth is absent.
+// Idempotent, so stored snapshots can be re-derived at read time when this rule changes.
+const DAY=86400000, GROWTH_NOTE='Historical growth';
+export function rederiveGrowth(s){
+ if(!s||!s.derived||!s.quality) return s;
+ const derived={...s.derived,historicalGrowth:{revenueCagrPct:null,years:null,from:null,to:null}}, warnings=s.quality.warnings.filter(w=>!w.startsWith(GROWTH_NOTE));
+ if(derived.revenueGrowthSource&&derived.revenueGrowthSource.startsWith('derived from')){derived.revenueGrowthPct=s.growth?.revenueGrowthPct??null;derived.revenueGrowthSource=derived.revenueGrowthPct!==null?'reported':null;}
+ const dated=(s.history||[]).filter(h=>h.revenue>0&&h.periodEndDate).sort((a,b)=>a.periodEndDate.localeCompare(b.periodEndDate)), undated=(s.history||[]).filter(h=>h.revenue>0&&!h.periodEndDate);
+ const annual=[], partial=[];
+ for(const h of dated){ const prev=annual.at(-1); if(!prev){annual.push(h);continue;} const gap=(Date.parse(h.periodEndDate)-Date.parse(prev.periodEndDate))/DAY; if(gap>=330) annual.push(h); else partial.push(h); }
+ if(partial.length||undated.length) warnings.push(`${GROWTH_NOTE} excludes periods that are not a full year apart or are undated: ${[...partial,...undated].map(h=>h.periodLabel||h.periodEndDate||'unlabeled').join(', ')}.`);
+ if(annual.length>=2){
+  const first=annual[0], last=annual.at(-1), elapsed=(Date.parse(last.periodEndDate)-Date.parse(first.periodEndDate))/DAY/365.25, whole=Math.round(elapsed);
+  const years=Math.abs(elapsed-whole)<0.1?whole:elapsed; // fiscal years (including 52/53-week years) count as whole years
+  const cagr=(Math.pow(last.revenue/first.revenue,1/years)-1)*100;
+  if(Number.isFinite(cagr)) derived.historicalGrowth={revenueCagrPct:cagr,years:Math.round(years*10)/10,from:first.periodLabel||first.periodEndDate,to:last.periodLabel||last.periodEndDate};
+  const prev=annual.at(-2), gap=(Date.parse(last.periodEndDate)-Date.parse(prev.periodEndDate))/DAY;
+  if(derived.revenueGrowthPct===null&&gap<=400){derived.revenueGrowthPct=(last.revenue/prev.revenue-1)*100;derived.revenueGrowthSource=`derived from ${prev.periodLabel||prev.periodEndDate} to ${last.periodLabel||last.periodEndDate}`;}
+ }
+ return {...s,derived,quality:{...s.quality,warnings}};
 }
 
 export const money=(v,c)=>{ if(v===null||v===undefined) return 'n/a'; const a=Math.abs(v); const s=a>=1e9?`${(v/1e9).toFixed(2)}bn`:a>=1e6?`${(v/1e6).toFixed(1)}m`:a>=1e3?`${(v/1e3).toFixed(1)}k`:v.toFixed(2); return c?`${c} ${s}`:s; };

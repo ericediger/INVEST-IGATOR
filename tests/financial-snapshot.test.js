@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {normalizeSnapshot,snapshotSummary} from '../server/financial-snapshot.js';
+import {normalizeSnapshot,snapshotSummary,rederiveGrowth} from '../server/financial-snapshot.js';
 // SYNTHETIC FIXTURES ONLY — none of these figures describe a real company.
 const sources=[{id:'S1',url:'https://example.com/quote',title:'SYNTHETIC quote'},{id:'S2',url:'https://example.com/10q',title:'SYNTHETIC filing'},{id:'S3',url:'https://example.com/consensus',title:'SYNTHETIC consensus'}];
 const asOf='2026-09-13';
@@ -68,6 +68,19 @@ test('sourced market cap and enterprise value are retained but cross-checked aga
  assert.ok(s.quality.warnings.some(w=>/Sourced market cap differs from price × basic shares outstanding by 50%/.test(w)));
  assert.equal(s.enterpriseValue.value,61000000000);assert.equal(s.enterpriseValue.derivedValue,62000000000);
  assert.ok(near(s.derived.multiples.evEbitda,24.4));assert.ok(near(s.derived.multiples.fcfYield,3));
+});
+
+test('historical growth uses full fiscal years only; partial periods are excluded and stored snapshots can be re-derived',()=>{
+ const d=draft();d.growth.revenueGrowthPct=null;
+ d.history=[{periodLabel:'FY2024',periodEndDate:'2024-12-31',revenue:8800000000,ebitda:null,netIncome:null,freeCashFlow:null,sourceIds:['S2']},{periodLabel:'FY2025',periodEndDate:'2025-12-31',revenue:9680000000,ebitda:null,netIncome:null,freeCashFlow:null,sourceIds:['S2']},{periodLabel:'H1 2026',periodEndDate:'2026-06-30',revenue:5200000000,ebitda:null,netIncome:null,freeCashFlow:null,sourceIds:['S2']},{periodLabel:'Undated',periodEndDate:null,revenue:1000,ebitda:null,netIncome:null,freeCashFlow:null,sourceIds:['S2']}];
+ const s=normalizeSnapshot(d,sources,asOf);
+ assert.ok(near(s.derived.historicalGrowth.revenueCagrPct,10));assert.equal(s.derived.historicalGrowth.years,1);assert.equal(s.derived.historicalGrowth.to,'FY2025');
+ assert.ok(near(s.derived.revenueGrowthPct,10));assert.match(s.derived.revenueGrowthSource,/derived from FY2024 to FY2025/);
+ assert.ok(s.quality.warnings.some(w=>/Historical growth excludes periods.*H1 2026, Undated/.test(w)));
+ // A stored snapshot derived under the old rule (every entry treated as a year) is corrected without touching model-reported figures.
+ const stale={...s,derived:{...s.derived,historicalGrowth:{revenueCagrPct:-37,years:3,from:'FY2023',to:'Q3 FY2026'},revenueGrowthPct:-14,revenueGrowthSource:'derived from FY2025 to Q3 FY2026'},quality:{...s.quality,warnings:[]}};
+ const fixed=rederiveGrowth(stale);assert.ok(near(fixed.derived.historicalGrowth.revenueCagrPct,10));assert.ok(near(fixed.derived.revenueGrowthPct,10));assert.equal(fixed.history,s.history);assert.deepEqual(rederiveGrowth(fixed).derived,fixed.derived);
+ const reported={...stale,growth:{...stale.growth,revenueGrowthPct:21}};assert.equal(rederiveGrowth(reported).derived.revenueGrowthPct,21);assert.equal(rederiveGrowth(reported).derived.revenueGrowthSource,'reported');
 });
 
 test('over-long model output is bounded with a warning instead of failing the run',()=>{

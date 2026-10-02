@@ -1,7 +1,7 @@
 // Sector analysis: company discovery, peer comparison context and ranked recommendation validation.
 import {z} from 'zod';
 import {parse,fail} from './model.js';
-import {snapshotSummary} from './financial-snapshot.js';
+import {snapshotSummary,rederiveGrowth} from './financial-snapshot.js';
 import {clampOutput} from './bounds.js';
 
 const CURRENCIES=new Set(Intl.supportedValuesOf('currency'));
@@ -93,7 +93,7 @@ export function comparisonContext(companies){
   const map=new Map();
   for(const s of c.sources||[]){ let g=byUrl.get(s.url); if(!g){g={id:`A${registry.length+1}`,url:s.url,title:s.title};registry.push(g);byUrl.set(s.url,g);} map.set(s.id,g.id); }
   const remapSnapshot=s=>{ if(!s) return null; const j=JSON.parse(JSON.stringify(s)); const walk=o=>{for(const k of Object.keys(o)){const v=o[k];if(k==='sourceId'&&typeof v==='string')o[k]=map.get(v)||null;else if(k==='sourceIds'&&Array.isArray(v))o[k]=v.map(i=>map.get(i)).filter(Boolean);else if(v&&typeof v==='object')walk(v);}}; walk(j); return j; };
-  const snapshot=remapSnapshot(c.snapshot);
+  const snapshot=remapSnapshot(c.snapshot?rederiveGrowth(c.snapshot):null);
   rows.push({companyId:c.companyId,ticker:c.ticker,name:c.name,runId:c.runId,report:compactReport(c.report,map),snapshot,snapshotSummary:snapshotSummary(snapshot),sourceMap:Object.fromEntries(map)});
  }
  const withSnap=rows.filter(r=>r.snapshot);
