@@ -1,6 +1,6 @@
 # HANDOFF — INVEST-IGATOR
 
-Last updated: 2026-10-06 (Session 3: intake, dispositions and the home screen, release 1.4.0). Rewritten whole; it replaces every earlier version of this file.
+Last updated: 2026-10-06 (Session 3: intake, dispositions and the home screen, releases 1.4.0 and 1.4.1). Rewritten whole; it replaces every earlier version of this file.
 
 Read this file, then `docs/NEXT-SESSIONS-PLAN.md`. Working rules for agents are in `AGENTS.md`.
 
@@ -18,14 +18,15 @@ Owner's requirements, in order of authority:
 
 ## Current state
 
-- **Live version: 1.4.0**, activated 2026-10-06. Open `http://127.0.0.1:5191` on this Mac or `http://<lan-address>:5191` on the trusted home LAN.
+- **Live version: 1.4.1**, activated 2026-10-06 (1.4.0 earlier the same day). Open `http://127.0.0.1:5191` on this Mac or `http://<lan-address>:5191` on the trusted home LAN.
 - **Home screen** (`#home`): an *Add companies* box (names or tickers), tiles and tabs for Watch & Invested / Research / Declined / Archived, and one row per company with its rating and date, one-line summary, latest dated price, forward P/E, EV/EBITDA, FCF yield, market cap, revenue growth, research progress and the disposition control. The company page opens with the same research summary above the owner's notes.
-- **Dispositions on the live data**: ETN, ACM and WSP are Watch (from their stored assessments); VRT and NVT are Research (Research further); APH, PWR, FIX and ANET are Research (never researched). Nothing is Declined or Invested. The owner has not yet used the intake box or an override.
-- Workspace: 9 companies, 13 evidence notes, 0 manual snapshots, 0 scenarios, 0 decisions; revision `d0f0f668-83ea-4f9f-854c-cef94bbc323a`, unchanged since 2026-10-02.
-- AI archive: 9 completed runs (7 company reviews, 1 discovery, 1 comparison) and 1 completed sector analysis. No intake has been run yet.
+- **Dispositions on the live data**: ETN, ACM, WSP and LITE are Watch (from their assessments); VRT and NVT are Research (Research further); APH, PWR, FIX and ANET are Research (never researched). Nothing is Declined or Invested; no override has been used.
+- **The owner's first intake** (2026-10-06): “LUMENTUM” resolved to Lumentum Holdings Inc. (LITE, Nasdaq Global Select Market, USD) with a business description; its snapshot-first review completed as Watch in about six minutes. Its empty notes were filled from that assessment after 1.4.1 shipped. VRT, NVT, ACM and WSP still have empty notes; their company pages offer **Fill empty notes from this assessment**.
+- Workspace: 10 companies, 14 evidence notes, 0 manual snapshots, 0 scenarios, 0 decisions.
+- AI archive: 11 completed runs (8 company reviews, 1 intake, 1 discovery, 1 comparison) and 1 completed sector analysis.
 - AI settings: model `gpt-6-astra`, medium reasoning, 12-month horizon, 10 runs a day, 6 companies per sector analysis, 2 concurrent jobs, prompt version 2.
-- Verification on 2026-10-06: 63 automated tests, the build check and 23 browser checks passed; a rehearsal on a restored copy of the production backup matched expectations; the installed release passed `scripts/verify-ai-install.mjs` on both addresses. Details in `TEST-RESULTS.md`.
-- Git: `main` is at release 1.4.0 (branches `session-2-invest-igator` and `session-3-workflow` are merged and can be deleted). No remote.
+- Verification on 2026-10-06: 64 automated tests, the build check and 24 browser checks passed; a rehearsal on a restored copy of the production backup matched expectations; the installed release passed `scripts/verify-ai-install.mjs` on both addresses after each release. Details in `TEST-RESULTS.md`.
+- Git: `main` is at release 1.4.1 (branches `session-2-invest-igator` and `session-3-workflow` are merged and can be deleted). No remote.
 
 ## Where everything lives
 
@@ -36,7 +37,7 @@ Owner's requirements, in order of authority:
 | App folder | `INVEST-IGATOR/invest-igator/` |
 | **Source repository (git, edit here)** | `INVEST-IGATOR/invest-igator/source/` |
 | Installed releases (immutable, include `node_modules`) | `invest-igator/releases/1.0.0` … `1.4.0` |
-| Active release | `invest-igator/current` (symlink → `releases/1.4.0`) |
+| Active release | `invest-igator/current` (symlink → `releases/1.4.1`) |
 | Key setup launcher | `invest-igator/Connect AI.command` |
 | LaunchAgent backups | `invest-igator/service-config-backups/` |
 | Database, backups, logs, API key | `~/Library/Application Support/InvestmentResearch/` |
@@ -65,11 +66,11 @@ See `AGENTS.md` for the full rules. In short: edit only in `source/`, bump the v
 ## Design decisions in force
 
 - Analyses are a persisted state machine driving ordinary research runs on one job queue; intake is a run kind that the workflow service completes.
-- The model reports only cited figures; the app computes every derived value. No model output is written to the workspace: the workflow writes only validated listing fields (exchange, currency) when the record is blank, provenance evidence notes and new companies.
+- The model reports only cited figures; the app computes every derived value. The workflow writes to the workspace only what is blank on a company record: exchange and currency from the verified snapshot, and (1.4.1) the thesis, risks and disconfirming-evidence notes from the assessment with an attribution line. It never overwrites the owner's words. It also writes provenance evidence notes and new companies.
 - Dispositions are derived from the latest completed **company** assessment (Consider → Watch with a Consider highlight, Watch → Watch, Research further → Research, Pass → Declined; missing → Research, never Declined), not from the sector ranking. Every automatic change records the run, the rating and the previous value.
 - An owner setting stands until the owner releases it; a newer disagreeing assessment is a notice, never a change. The app never sets Invested. Invested records the entry date, price and currency; quantity and amount are optional.
 - Intake asks the owner only when a name could mean more than one listed company (or the identification is low confidence); unresolved names, funds and indexes add nothing.
-- The research summary shown on the home screen and company page is derived from the stored assessment; the owner's thesis, risks and disconfirming-evidence fields remain the owner's notes.
+- The research summary shown on the home screen and company page is derived from the stored assessment. The owner's thesis, risks and disconfirming-evidence fields are the owner's notes: research seeds them only while they are empty, and the attribution line shows what came from research.
 - No multiples across currencies or with suspected scaled units; stale prices, old periods and old consensus are flagged. Model output is bounded leniently rather than failing a paid run.
 - Workspace schema stays at version 1; new features use additive tables so rollback stays possible. Backfill never writes the workspace, so the release health check (workspace identical before and after) keeps working.
 - Operational defaults left as shipped: a sector analysis counts as one daily run; discovery and intake add companies automatically with a provenance note; a Consider rating may rest on a fresh AI-collected price plus a computed multiple; worker concurrency is 2.
@@ -90,9 +91,8 @@ The owner should now try the home screen: type a company name or ticker, watch i
 
 - The intake's listing verification depends on the model with web search (2 requests). A data feed (Session 4) would make it deterministic and free. Until then a wrong identification is possible; the provenance note on each added company says what was verified and the owner can archive a mistake.
 - Dispositions follow the company assessment; the sector ranking's rating (which can be downgraded for a stale price) stays on the dashboard only.
-- Listing fill-in writes exchange and currency only when the record is blank. VRT's record is still blank in the workspace (its research snapshot predates 1.4.0); the home screen shows NYSE / USD "from research" until the next VRT run fills it.
+- Fill-in writes only blank fields. VRT's exchange and currency and the notes of VRT, NVT, ACM and WSP are still blank (their research predates the fill-in); the home screen shows VRT's listing “from research”, and each company page offers to fill the notes from the stored assessment.
 - Prices on the home screen are the latest research or manual snapshot, dated and aged; there is no feed yet, so they go stale.
-- One intermittent automated-test failure was seen in a run that overlapped with another server process; five further runs passed and the test could not be identified.
 - No multi-company live analysis beyond the owner's 2-company run has been reviewed. The model often leaves net income, diluted EPS and total debt empty. AECOM's "revenue growth −14% (reported)" deserves a manual check.
 - Restarting the service interrupts running research (including intake and the reviews it queued); there is no automatic retry.
 - Backups are on this Mac only. The backup job leaves `.partial-shm` and `.partial-wal` files behind (harmless).
@@ -105,6 +105,6 @@ The owner should now try the home screen: type a company name or ticker, watch i
 | Earlier agent sessions (no reports) | 2026-09-06 to 09-07 | 1.0.0, 1.0.1, 1.1.0, 1.2.0 | `TEST-RESULTS.md` |
 | 1 | 2026-09-13 (wrap-up 2026-10-02) | 1.3.0, 1.3.1 | `Session Reports/260913_SESSION-1-REPORT.md` |
 | 2 | 2026-10-02 | 1.3.2 | `Session Reports/261002_SESSION-2-REPORT.md` |
-| 3 | 2026-10-06 | 1.4.0 | `Session Reports/261006_SESSION-3-REPORT.md` |
+| 3 | 2026-10-06 | 1.4.0, 1.4.1 | `Session Reports/261006_SESSION-3-REPORT.md`, `261006_SESSION-3B-REPORT.md` |
 
 The Session 1 report and its session log were written before the owner's October 2 decisions. Where they say `main` is untouched, the import is blocked or holdings will be imported, this file is correct and they are not.

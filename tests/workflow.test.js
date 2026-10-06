@@ -82,10 +82,30 @@ test('a completed snapshot-first review files the company automatically, fills i
  assert.equal(e.assessment.runId,run.id);assert.equal(e.assessment.summary,'SYNTHETIC summary.');assert.deepEqual(e.assessment.detail.bearCase,['SYNTHETIC bear.']);
  assert.equal(e.price.source,'Research snapshot');assert.equal(e.price.value,50);assert.equal(e.price.ageDays,1);assert.equal(e.figures.multiples.peForward,62.5);assert.equal(e.figures.comparable,true);assert.equal(e.pending,null);
  const c=store.read().workspace.companies.find(x=>x.id===cid);assert.equal(c.exchange,'NYSE');assert.equal(c.currency,'USD');assert.equal(c.revision,2);assert.equal(c.history[0].exchange,'');
+ // Blank notes are filled from the assessment with an attribution line; the owner's own text is never touched.
+ assert.match(c.thesis,/^SYNTHETIC summary\.\n\n— From the research assessment of \d{4}-\d{2}-\d{2} \(Watch\)/);assert.match(c.risks,/^SYNTHETIC bear\./);assert.match(c.disconfirming,/^SYNTHETIC trigger/);assert.equal(c.history[0].thesis,'');
+ assert.ok(e.notes.thesis&&e.notes.risks&&e.notes.disconfirming);assert.ok(e.pending===null);
  assert.equal(ai.read(run.id).contextChanged,false);assert.equal(e.listing.fromResearch,false);assert.equal(e.listing.exchange,'NYSE');
  const o=wf.overview();assert.equal(o.counts.watch,1);assert.equal(o.counts.main,1);assert.equal(o.counts.research,6);assert.equal(o.counts.declined,0);assert.equal(o.counts.researching,0);
  // A second review re-confirms the basis without an owner change; only the owner's own edits mark the run's context as changed.
  const again=await finished(ai,ai.enqueue({companyId:cid,kind:'review'}).id);assert.equal(wf.companyOverview(cid).disposition.runId,again.id);assert.equal(store.read().workspace.companies.find(x=>x.id===cid).revision,2);
+});
+
+test('research fills only blank notes; the owner can fill empty notes from a stored assessment without a new run',async t=>{
+ const {ai,wf,store,cid}=setup(t);
+ const {id,history,revision,archivedAt,createdAt,updatedAt,...input}=store.read().workspace.companies[0];
+ store.update(store.read().revision,'company.update',{companyId:cid,...input,thesis:'My own thesis.'});
+ assert.throws(()=>wf.fillNotes({companyId:cid}),e=>e.status===409);
+ const run=await finished(ai,ai.enqueue({companyId:cid,kind:'review',withSnapshot:true}).id);
+ let c=store.read().workspace.companies.find(x=>x.id===cid);assert.equal(c.thesis,'My own thesis.');assert.match(c.risks,/SYNTHETIC bear/);assert.match(c.disconfirming,/SYNTHETIC trigger/);assert.equal(c.exchange,'NYSE');assert.equal(c.revision,3);
+ assert.equal(ai.read(run.id).contextChanged,false);
+ // Clear a note by hand, then fill it again from the stored assessment: only the blank field changes, and the basis is re-stamped.
+ const {id:_,history:__,revision:___,archivedAt:____,createdAt:_____,updatedAt:______,...now}=c;store.update(store.read().revision,'company.update',{companyId:cid,...now,risks:''});
+ assert.equal(ai.read(run.id).contextChanged,true);
+ const filled=wf.fillNotes({companyId:cid});assert.ok(filled.notes.risks);
+ c=store.read().workspace.companies.find(x=>x.id===cid);assert.match(c.risks,/SYNTHETIC bear/);assert.equal(c.thesis,'My own thesis.');assert.equal(c.revision,5);assert.equal(ai.read(run.id).contextChanged,false);
+ assert.equal(wf.fillNotes({companyId:cid}).notes.risks,true);assert.equal(store.read().workspace.companies.find(x=>x.id===cid).revision,5);
+ assert.ok(wf.companyOverview(cid).pending===null);
 });
 
 test('a Consider assessment files as Watch with a highlight, Pass declines, and a failed run changes nothing',async t=>{
@@ -165,7 +185,7 @@ test('intake verifies listings, adds companies with provenance, files them as Re
  const after=store.read().workspace;assert.equal(after.companies.length,before.companies.length+1);
  const syn=after.companies.find(c=>c.ticker==='SYN');assert.equal(syn.exchange,'NYSE');assert.equal(syn.currency,'USD');assert.equal(syn.role,'SYNTHETIC peer.');assert.equal(syn.status,'Researching');
  assert.ok(after.evidence.some(e=>e.companyId===syn.id&&e.author==='Company intake'&&e.source.url==='https://example.com/filing'&&/Synthetic Peer/.test(e.note)));
- let s=wf.companyOverview(syn.id);assert.equal(s.disposition.value,'Research');assert.match(s.disposition.note,/Synthetic Peer/);assert.ok(s.pending);assert.equal(s.pending.kind,'review');assert.equal(wf.overview().counts.researching,2);
+ let s=wf.companyOverview(syn.id);assert.equal(s.disposition.value,'Research');assert.match(s.disposition.note,/Synthetic Peer/);assert.ok(s.pending);assert.equal(s.pending.kind,'review');assert.ok(s.pending.createdAt&&s.pending.updatedAt);assert.equal(wf.overview().counts.researching,2);
  release();provider.gate=null;
  await finished(ai,by('Synthetic Peer').reviewRunId);await finished(ai,by('ETN').reviewRunId);
  assert.equal(wf.companyOverview(syn.id).disposition.value,'Watch');assert.equal(wf.companyOverview(cid).disposition.value,'Watch');
@@ -200,13 +220,14 @@ test('intake at the daily limit still adds the company and records that research
 });
 
 test('workflow HTTP routes return the overview, accept intake and overrides, and keep the origin protections',async t=>{
- const {ai,wf,store,cid}=setup(t);const root='http://127.0.0.1:5198',app=createApp(store,{origin:root,research:ai,workflow:wf}),server=app.listen(5198,'127.0.0.1');await new Promise(r=>server.once('listening',r));t.after(()=>new Promise(r=>server.close(r)));
+ const {ai,wf,store,cid}=setup(t);const root='http://127.0.0.1:5199',app=createApp(store,{origin:root,research:ai,workflow:wf}),server=app.listen(5199,'127.0.0.1');await new Promise(r=>server.once('listening',r));t.after(()=>new Promise(r=>server.close(r)));
  const headers={Origin:root,'Content-Type':'application/json','X-Research-Request':'1'};
  let res=await fetch(root+'/api/workflow/overview');assert.equal(res.status,200);const o=await res.json();assert.equal(o.companies.length,7);assert.equal(o.counts.research,7);assert.deepEqual(o.intakes,[]);assert.match(o.today,/^\d{4}-\d{2}-\d{2}$/);
  res=await fetch(root+'/api/workflow/dispositions',{method:'POST',headers,body:JSON.stringify({companyId:cid,disposition:'Watch'})});assert.equal(res.status,200);assert.equal((await res.json()).disposition.value,'Watch');
  res=await fetch(root+'/api/workflow/dispositions',{method:'POST',headers,body:JSON.stringify({companyId:cid,disposition:'Invested'})});assert.equal(res.status,400);
  res=await fetch(root+'/api/workflow/intake',{method:'POST',headers,body:JSON.stringify({entries:['Synthetic Peer']})});assert.equal(res.status,202);const intake=await res.json();assert.equal(intake.entries[0].status,'pending');await finished(ai,intake.id);
  res=await fetch(root+'/api/workflow/intakes');assert.equal((await res.json()).intakes[0].entries[0].outcome,'research_queued');
+ res=await fetch(root+'/api/workflow/notes',{method:'POST',headers,body:JSON.stringify({companyId:cid})});assert.equal(res.status,409);
  for(const path of ['/api/workflow/intake','/api/workflow/dispositions','/api/workflow/intake/x/choose'])assert.equal((await fetch(root+path,{method:'POST',headers:{...headers,Origin:'https://attacker.example'},body:'{}'})).status,403);
  res=await fetch(root+'/api/workflow/intake/'+intake.id+'/choose',{method:'POST',headers,body:JSON.stringify({index:0,candidate:0})});assert.equal(res.status,409);
  res=await fetch(root+'/api/workflow/intake/nope/choose',{method:'POST',headers,body:JSON.stringify({index:0,candidate:0})});assert.equal(res.status,404);

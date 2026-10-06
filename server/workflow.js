@@ -56,7 +56,7 @@ export class WorkflowService {
   }
   return null;
  }
- pendingRun(companyId){ const r=this.db.prepare("SELECT id,kind,status,stage FROM ai_runs WHERE company_id=? AND status IN ('queued','running') ORDER BY created_at LIMIT 1").get(companyId); return r?{runId:r.id,kind:r.kind,status:r.status,stage:r.stage}:null; }
+ pendingRun(companyId){ const r=this.db.prepare("SELECT id,kind,status,stage,created_at,updated_at FROM ai_runs WHERE company_id=? AND status IN ('queued','running') ORDER BY created_at LIMIT 1").get(companyId); return r?{runId:r.id,kind:r.kind,status:r.status,stage:r.stage,createdAt:r.created_at,updatedAt:r.updated_at}:null; }
 
  // ---- after a run finishes ----
  afterRun(runId){
@@ -64,7 +64,7 @@ export class WorkflowService {
   const doc=JSON.parse(row.document);
   if(row.kind==='intake') return this.completeIntake(runId,doc);
   if(!row.company_id) return;
-  if(doc.snapshot) this.fillListing(runId,row.company_id,doc.snapshot);
+  this.fillRecord(runId,row.company_id,doc);
   if(row.kind==='review'&&doc.report) this.applyAssessment(runId,row.company_id,doc);
  }
  applyAssessment(runId,companyId,doc){
@@ -73,18 +73,35 @@ export class WorkflowService {
   if(current?.runId===runId) return;
   this.record({companyId,disposition,setBy:'app',runId,rating,note:`Applied from the ${rating} assessment of ${doc.context.asOf}.`});
  }
- // Fills a blank exchange or currency on the company record from the verified snapshot identity (never overwrites), then
- // re-stamps this run's fingerprint so the app's own fill-in does not read as an owner change to the research basis.
- fillListing(runId,companyId,snapshot){
-  const exchange=(snapshot.identity?.exchange||'').trim(), currency=snapshot.identity?.quoteCurrency||snapshot.price?.currency||null;
+ // Research updates the company record, filling only what is blank: exchange and currency from the verified snapshot identity,
+ // and the thesis, risks and disconfirming-evidence notes from the assessment (summary, bear case, invalidation triggers), each
+ // carrying an attribution line. Nothing the owner wrote is overwritten. The run's fingerprint is then re-stamped so the app's own
+ // fill-in does not read as an owner change to the research basis.
+ fillRecord(runId,companyId,doc){
+  const s=doc.snapshot||null, r=doc.report||null, asOf=doc.context?.asOf||today();
+  const exchange=(s?.identity?.exchange||'').trim(), currency=s?.identity?.quoteCurrency||s?.price?.currency||null;
+  const attribution=r?`\n\n— From the research assessment of ${asOf} (${r.recommendation}). Edit freely; research never overwrites your own words.`:'';
+  const text=v=>String(v||'').trim().slice(0,19000);
+  const fromReport=r?{thesis:text(r.summary.text)+attribution,risks:text(r.bearCase.map(p=>p.text).join('\n\n'))+attribution,disconfirming:text(r.invalidationTriggers.join('\n'))+attribution}:{};
+  let filled=false;
   for(let attempt=0;attempt<3;attempt++){
-   const {revision,workspace}=this.store.read(), c=workspace.companies.find(x=>x.id===companyId); if(!c||c.archivedAt) return;
-   const next={exchange:c.exchange||exchange,currency:c.currency||currency};
-   if(next.exchange===c.exchange&&next.currency===c.currency) return;
+   const {revision,workspace}=this.store.read(), c=workspace.companies.find(x=>x.id===companyId); if(!c||c.archivedAt) return false;
+   const next={exchange:c.exchange||exchange,currency:c.currency||currency,thesis:c.thesis||fromReport.thesis||c.thesis,risks:c.risks||fromReport.risks||c.risks,disconfirming:c.disconfirming||fromReport.disconfirming||c.disconfirming};
+   if(Object.keys(next).every(k=>next[k]===c[k])) return false;
    const {id:_,revision:__,archivedAt,createdAt,updatedAt,...input}=companyCopy(c);
-   try { this.store.update(revision,'company.update',{companyId,...input,...next}); this.research.restampFingerprint(runId,companyId); return; }
-   catch(error){ if(error.status!==409){console.error('Listing fill-in skipped:',error.status?error.message:error.name);return;} }
+   try { this.store.update(revision,'company.update',{companyId,...input,...next}); if(runId) this.research.restampFingerprint(runId,companyId); filled=true; break; }
+   catch(error){ if(error.status!==409){console.error('Record fill-in skipped:',error.status?error.message:error.name);return false;} }
   }
+  return filled;
+ }
+ // Owner action: fill blank notes and listing from the latest stored assessment without a new run.
+ fillNotes(value){
+  const companyId=z.object({companyId:z.string().uuid()}).strict().parse(value||{}).companyId;
+  const a=this.latestAssessment(companyId); if(!a) fail('No completed assessment exists for this company yet. Start research first.',409);
+  const row=this.db.prepare('SELECT document FROM ai_runs WHERE id=?').get(a.runId), doc=JSON.parse(row.document);
+  const latestSnapshot=this.latestSnapshot(companyId);
+  this.fillRecord(a.runId,companyId,{...doc,snapshot:doc.snapshot||latestSnapshot?.snapshot||null});
+  return this.companyOverview(companyId);
  }
 
  // ---- intake ----
@@ -192,6 +209,6 @@ export class WorkflowService {
   }
   const listing={exchange:c.exchange||s?.identity.exchange||'',currency:c.currency||s?.identity.quoteCurrency||s?.price.currency||null};
   listing.fromResearch=listing.exchange!==c.exchange||listing.currency!==c.currency;
-  return {id:c.id,ticker:c.ticker,name:c.name,role:c.role,archivedAt:c.archivedAt,reviewDate:c.reviewDate,status:c.status,listing,disposition,notice,assessment,price,figures,pending,manualSnapshots:workspace.snapshots.filter(x=>x.companyId===c.id).length,scenarios:workspace.scenarios.filter(x=>x.companyId===c.id).length,decisions:workspace.decisions.filter(x=>x.companyId===c.id).length};
+  return {id:c.id,ticker:c.ticker,name:c.name,role:c.role,archivedAt:c.archivedAt,reviewDate:c.reviewDate,status:c.status,listing,notes:{thesis:!!c.thesis,risks:!!c.risks,disconfirming:!!c.disconfirming},disposition,notice,assessment,price,figures,pending,manualSnapshots:workspace.snapshots.filter(x=>x.companyId===c.id).length,scenarios:workspace.scenarios.filter(x=>x.companyId===c.id).length,decisions:workspace.decisions.filter(x=>x.companyId===c.id).length};
  }
 }

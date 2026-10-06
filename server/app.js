@@ -13,7 +13,7 @@ export function createApp(store,options={}) {
     next();
   });
   app.use(express.json({limit:'5mb',strict:true}));
-  app.get('/api/workspace',(req,res)=>res.json({...store.read(),today:today(),access:policy.label,accessDescription:policy.description,version:'1.4.0'}));
+  app.get('/api/workspace',(req,res)=>res.json({...store.read(),today:today(),access:policy.label,accessDescription:policy.description,version:'1.4.1'}));
   app.get('/api/health',(req,res)=>res.json({ok:true,schemaVersion:1}));
   app.get('/api/export',(req,res)=>res.attachment(`invest-igator-${today()}.json`).json(store.export()));
   app.get('/api/backups',(req,res)=>res.json({backups:store.backupStatus()}));
@@ -45,6 +45,7 @@ export function createApp(store,options={}) {
     app.post('/api/workflow/intake',route((req,res)=>res.status(202).json(workflow.intake(req.body))));
     app.post('/api/workflow/intake/:id/choose',route((req,res)=>res.json(workflow.chooseListing(req.params.id,req.body))));
     app.post('/api/workflow/dispositions',route((req,res)=>res.json(workflow.setDisposition(req.body))));
+    app.post('/api/workflow/notes',route((req,res)=>res.json(workflow.fillNotes(req.body))));
   }
   app.use(express.static(fileURLToPath(new URL('../public',import.meta.url)),{dotfiles:'deny',index:'index.html',etag:false}));
   app.use((req,res)=>res.status(404).json({error:'Not found'}));

@@ -40,7 +40,7 @@ try{
   await page.locator('#thesis').fill('UNSAVED MAIN DRAFT');
   await page.locator('#ai-accept').click();await page.locator('#ai-result .success').waitFor();assert.equal(await page.locator('#thesis').inputValue(),'UNSAVED MAIN DRAFT');
   const data=(await(await page.request.get(root+'/api/workspace')).json()).workspace;
-  assert.equal(data.evidence.filter(e=>e.author==='AI research · reviewed by user').length,1);assert.equal(data.decisions.length,0);assert.equal(data.companies[0].thesis,'');
+  assert.equal(data.evidence.filter(e=>e.author==='AI research · reviewed by user').length,1);assert.equal(data.decisions.length,0);assert.ok(data.companies[0].thesis.includes('From the research assessment of'));assert.ok(data.companies[0].risks.includes('SYNTHETIC UI TEST'));
  });
  // Leave the unsaved main form through the application's own discard confirmation.
  await page.locator('nav a[href="#research"]').click();await page.locator('#confirm-ok').click();
@@ -97,6 +97,18 @@ try{
   assert.equal(await page.locator('#company-form select#status').count(),0);assert.equal(await page.locator('#company-form input[name=status]').count(),1);
   assert.ok((await page.locator('label[for=role]').textContent()).includes('What the company does'));
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+ });
+ await check('a running review shows a progress bar with its step, and the assistant explains why its buttons are disabled',async()=>{
+  const vrt=companies[1],headers={Origin:root,'X-Research-Request':'1','Content-Type':'application/json'};
+  const started=await page.request.post(root+'/api/research/runs',{headers,data:{companyId:vrt.id,kind:'review',withSnapshot:true}});assert.equal(started.status(),202);
+  await page.goto(root+'/#home/research');await page.locator('.home-row[data-ticker="VRT"] .progress').waitFor({timeout:5000});
+  const text=await page.locator('.home-row[data-ticker="VRT"] .progress').textContent();assert.ok(/of 5|queue|Starting/.test(text));assert.ok(text.includes('usually takes'));
+  await page.goto(root+'/#company/'+vrt.id+'/overview');if(!await page.locator('#research-panel').isVisible())await page.locator('#research-toggle').click();
+  await page.waitForFunction(id=>document.querySelector('#ai-company')?.value===id,vrt.id);
+  const run=(await(await page.request.get(root+'/api/research/runs?companyId='+vrt.id)).json()).runs[0];
+  if(['queued','running'].includes(run.status)){assert.equal(await page.locator('#ai-review').isDisabled(),true);assert.equal(await page.locator('#ai-progress').isVisible(),true);assert.ok((await page.locator('#ai-progress').textContent()).includes('Research in progress'));}
+  await page.waitForFunction(()=>document.querySelector('#ai-progress')?.hidden===true,{},{timeout:20000});assert.equal(await page.locator('#ai-review').isDisabled(),false);
+  await page.locator('#ai-close').click();
  });
  await check('the mobile home screen fits the viewport',async()=>{
   await page.setViewportSize({width:390,height:844});await page.goto(root+'/#home');await page.locator('.home-row').first().waitFor();

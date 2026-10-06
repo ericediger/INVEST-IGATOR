@@ -3,6 +3,15 @@ const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 const stamp=s=>new Date(s).toLocaleString();
 const KIND_LABELS={review:'Assessment',forward_eps:'Forward EPS',snapshot:'Financial snapshot',discovery:'Sector discovery',comparison:'Sector ranking',intake:'Company intake'};
 const runLabel=r=>KIND_LABELS[r.kind]||r.question.slice(0,45);
+const TYPICAL={review:'A full review usually takes 5–10 minutes',snapshot:'A snapshot usually takes 2–4 minutes',intake:'Verifying listings usually takes 1–2 minutes',discovery:'Discovery usually takes 2–4 minutes',comparison:'The ranking usually takes 1–3 minutes',forward_eps:'EPS research usually takes 1–3 minutes',question:'An answer usually takes 1–3 minutes'};
+// Progress for a queued or running run: step N of M parsed from the server's stage text, elapsed time and a typical duration.
+export function progressHTML(run){
+ const m=/^(\d+) of (\d+)/.exec(run.stage||''),step=m?Number(m[1]):null,total=m?Number(m[2]):null;
+ const pct=run.status==='queued'?2:step&&total?Math.round(((step-0.5)/total)*100):8;
+ const minutes=run.createdAt?Math.max(0,Math.floor((Date.now()-Date.parse(run.createdAt))/60000)):null;
+ const label=run.status==='queued'?'Waiting in the research queue':(run.stage||'Starting');
+ return `<div class="progress" role="status" aria-live="polite"><div class="progress-track" aria-hidden="true"><span class="progress-fill" style="width:${pct}%"></span></div><small><strong>${esc(label)}</strong>${minutes!=null?` · ${minutes<1?'just started':minutes+' min elapsed'}`:''}${TYPICAL[run.kind]?` · ${TYPICAL[run.kind]}`:''}</small></div>`;
+}
 const fmtMoney=v=>{const a=Math.abs(v);return a>=1e9?(v/1e9).toFixed(2)+'bn':a>=1e6?(v/1e6).toFixed(1)+'m':a>=1e3?(v/1e3).toFixed(1)+'k':v.toFixed(2);};
 export function snapshotHTML(s,sources){
  const src=id=>id?cites([id],sources):'';const srcs=ids=>cites(ids||[],sources);
@@ -53,6 +62,7 @@ function install(){
  <p class="hint">Starting a run sends this company’s saved notes, evidence, snapshots, scenarios, recent decisions and recent AI conversation to OpenAI. The service searches the public web. Up to 20 recent evidence notes are included.</p>
  <label class="check"><input type="checkbox" id="ai-with-snapshot" checked> Collect a financial &amp; market snapshot first (2 extra requests)</label>
  <div class="actions"><button id="ai-review" type="button" class="primary">Research & recommend</button><button id="ai-snapshot" type="button">Financial snapshot only</button></div>
+ <div id="ai-progress" class="ai-callout" hidden></div>
  <p class="hint">For a whole sector, use <a href="#analysis">Sector analysis</a>: one request discovers the companies, researches each one and ranks them.</p>
  <form id="ai-question-form"><label for="ai-question">Direct the research</label><textarea id="ai-question" maxlength="3000" placeholder="What would weaken this company’s investment case?" required></textarea><div class="actions"><button type="submit" id="ai-ask">Investigate question</button><a href="#research">All research</a></div></form>
  <p id="ai-feedback" class="error" role="alert" hidden></p>
@@ -86,7 +96,7 @@ async function start(kind,metricRequest,extra={}){
   if(run.companyId===selected){viewSequence++;current=run;if(kind==='question'){$('#ai-question').value='';draftByCompany[selected]='';}renderRun();}await poll();
  }catch(e){showError(e);}finally{pending=false;buttons();}
 }
-function buttons(){const archived=workspace?.companies.find(c=>c.id===selected)?.archivedAt;const busy=pending||runs.some(r=>['queued','running'].includes(r.status));const disabled=!status?.configured||!selected||!!archived||busy||status.usedToday>=status.settings.dailyLimit;$('#ai-review').disabled=disabled;$('#ai-ask').disabled=disabled;$('#ai-snapshot').disabled=disabled;}
+function buttons(){const archived=workspace?.companies.find(c=>c.id===selected)?.archivedAt;const active=runs.find(r=>['queued','running'].includes(r.status));const busy=pending||!!active;const disabled=!status?.configured||!selected||!!archived||busy||status.usedToday>=status.settings.dailyLimit;$('#ai-review').disabled=disabled;$('#ai-ask').disabled=disabled;$('#ai-snapshot').disabled=disabled;const p=$('#ai-progress');if(active){p.innerHTML=`<p><strong>Research in progress for this company.</strong> The buttons return when it finishes; you can leave this page or <button type="button" class="link-button" id="ai-progress-stop">stop it</button>.</p>${progressHTML(active)}`;p.hidden=false;$('#ai-progress-stop').onclick=async()=>{try{await api('runs/'+active.id+'/cancel',{});await poll();}catch(e){showError(e);}};}else{p.hidden=true;p.innerHTML='';}}
 async function poll(){
  if(pollBusy||!$('#research-panel'))return;pollBusy=true;const cid=selected,sequence=viewSequence;
  try{
@@ -107,7 +117,7 @@ function renderRun(){
  if(!current)return;const j=current,out=$('#ai-result');out.dataset.run=j.id;
  if(!j.companyId){out.innerHTML=`<p class="meta">${esc(j.context.analysis?.sector||j.context.intake?.label||'Sector analysis')} · ${stamp(j.createdAt)}</p><div class="ai-callout"><strong>${esc(runLabel(j))} · ${esc(j.status)}</strong><p>${esc(j.stage)}</p>${j.analysisId?`<p><a href="#analysis/${esc(j.analysisId)}">Open the sector dashboard</a></p>`:j.kind==='intake'?'<p><a href="#home">Open Home</a></p>':''}</div>`;return;}
  const meta=`<p class="meta">${esc(j.context.company.ticker)} · ${stamp(j.createdAt)}${j.analysisId?` · <a href="#analysis/${esc(j.analysisId)}">part of a sector analysis</a>`:''}<br>${j.context.mandate.horizonMonths}-month horizon · Company merits only</p>`;
- if(['queued','running'].includes(j.status)){out.innerHTML=meta+`<div class="ai-callout"><strong role="status">${esc(j.stage)}</strong><p>You can leave this page. Work continues while the server is running.</p><button id="ai-cancel" type="button">Stop research</button></div>`;$('#ai-cancel').onclick=async()=>{try{current=await api('runs/'+j.id+'/cancel',{});renderRun();await poll();}catch(e){showError(e);}};return;}
+ if(['queued','running'].includes(j.status)){out.innerHTML=meta+`<div class="ai-callout">${progressHTML(j)}<p>You can leave this page. Work continues while the server is running.</p><button id="ai-cancel" type="button">Stop research</button></div>`;$('#ai-cancel').onclick=async()=>{try{current=await api('runs/'+j.id+'/cancel',{});renderRun();await poll();}catch(e){showError(e);}};return;}
  if(j.status!=='completed'){out.innerHTML=meta+`<div class="ai-callout"><strong>${esc(j.stage)}</strong><p>${esc(j.error||'A new run is needed to continue. Previous research and saved notes are preserved.')}</p><p class="hint">No automatic retry was made. Provider usage may still be charged.</p></div>`;return;}
  const sources=`<details><summary>Sources · ${j.sources.length}</summary><p class="hint">Collected during this run. Publication dates are unknown unless stated in the assessment. Citation checks establish source provenance, not factual correctness.</p><ol class="ai-sources">${j.sources.map(s=>`<li>${link(s)}</li>`).join('')}</ol></details>`;
  const context=`<details><summary>Research basis & usage</summary><p class="hint">${esc(j.model)}${j.reasoningEffort?` · ${esc(j.reasoningEffort)} reasoning`:""} · prompt version ${j.promptVersion} · ${j.usage.reduce((n,u)=>n+u.inputTokens+u.outputTokens,0).toLocaleString()} reported tokens. This is not a dollar cost.</p>${j.context.omittedEvidenceCount?`<p>${j.context.omittedEvidenceCount} older evidence notes were outside this run’s context.</p>`:''}<pre>${esc(JSON.stringify(j.context,null,2))}</pre></details>`;

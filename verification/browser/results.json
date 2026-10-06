@@ -9,6 +9,7 @@
     "intake verifies listings, adds the company with research queued, asks about an ambiguous name and files the result automatically",
     "owner overrides: Declined sticks and moves the company, Invested records the entry, and releasing returns the app value",
     "the company page shows the research summary with figures, challenges and the disposition control",
+    "a running review shows a progress bar with its step, and the assistant explains why its buttons are disabled",
     "the mobile home screen fits the viewport",
     "follow-up answer links sources and escapes source HTML",
     "late background polling cannot replace a newly selected history item",
