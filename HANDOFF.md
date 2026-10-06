@@ -1,6 +1,6 @@
 # HANDOFF — INVEST-IGATOR
 
-Last updated: 2026-10-06 (Sessions 3 and 4: workflow releases 1.4.0 and 1.4.1, feeds release 1.5.0). Rewritten whole; it replaces every earlier version of this file.
+Last updated: 2026-10-06 (Sessions 3 and 4: workflow releases 1.4.0 and 1.4.1, feeds release 1.5.0, home redesign 1.5.1). Rewritten whole; it replaces every earlier version of this file.
 
 Read this file, then `docs/NEXT-SESSIONS-PLAN.md`. Working rules for agents are in `AGENTS.md`.
 
@@ -18,16 +18,16 @@ Owner's requirements, in order of authority:
 
 ## Current state
 
-- **Live version: 1.5.0**, activated 2026-10-06 (1.4.0 and 1.4.1 earlier the same day).
+- **Live version: 1.5.1**, activated 2026-10-06 (1.4.0, 1.4.1 and 1.5.0 earlier the same day). 1.5.1 is the dark-interface home redesign requested by the owner (Project Signal brief): Invested and Watch sections, compact rows, Details disclosure, triggers from stored research.
 - **Feeds are dormant until the owner runs `Connect feeds.command`** (Tiingo token and SEC EDGAR contact). Then closes are fetched daily after 16:45 ET while the app runs, snapshots become feed first, and the bounded live token measurement can be run (`scripts/verify-live-sector.mjs … snapshot`). Open `http://127.0.0.1:5191` on this Mac or `http://<lan-address>:5191` on the trusted home LAN.
-- **Home screen** (`#home`): an *Add companies* box (names or tickers), tiles and tabs for Watch & Invested / Research / Declined / Archived, and one row per company with its rating and date, one-line summary, latest dated price, forward P/E, EV/EBITDA, FCF yield, market cap, revenue growth, research progress and the disposition control. The company page opens with the same research summary above the owner's notes.
+- **Home screen** (`#home`): an *Add companies* box (names or tickers); Invested and Watch as separate sections; Research, Declined and Archived as separate views. Each row: ticker and name, what the company does, disposition with who decides and assessed-ago (Stale after 30 days), one supporting line, one "what would move it" line; Details holds price, listing, multiples, why the rating, triggers, research actions and the decision control. The company page opens with the same research summary above the owner's notes.
 - **Dispositions on the live data**: ETN, ACM, WSP and LITE are Watch (from their assessments); VRT and NVT are Research (Research further); APH, PWR, FIX and ANET are Research (never researched). Nothing is Declined or Invested; no override has been used.
 - **The owner's first intake** (2026-10-06): “LUMENTUM” resolved to Lumentum Holdings Inc. (LITE, Nasdaq Global Select Market, USD) with a business description; its snapshot-first review completed as Watch in about six minutes. Its empty notes were filled from that assessment after 1.4.1 shipped. VRT, NVT, ACM and WSP still have empty notes; their company pages offer **Fill empty notes from this assessment**.
 - Workspace: 10 companies, 14 evidence notes, 0 manual snapshots, 0 scenarios, 0 decisions.
 - AI archive: 11 completed runs (8 company reviews, 1 intake, 1 discovery, 1 comparison) and 1 completed sector analysis.
 - AI settings: model `gpt-6-astra`, medium reasoning, 12-month horizon, 10 runs a day, 6 companies per sector analysis, 2 concurrent jobs, prompt version 2.
 - Verification on 2026-10-06: 71 automated tests, the build check and 26 browser checks passed; a rehearsal on a restored copy of the production backup matched expectations; the installed release passed `scripts/verify-ai-install.mjs` on both addresses after each release. Details in `TEST-RESULTS.md`.
-- Git: `main` is at release 1.5.0 (branches `session-2-invest-igator` and `session-3-workflow` are merged and can be deleted). No remote.
+- Git: `main` is at release 1.5.1 (branches `session-2-invest-igator` and `session-3-workflow` are merged and can be deleted). No remote.
 
 ## Where everything lives
 
@@ -38,7 +38,7 @@ Owner's requirements, in order of authority:
 | App folder | `INVEST-IGATOR/invest-igator/` |
 | **Source repository (git, edit here)** | `INVEST-IGATOR/invest-igator/source/` |
 | Installed releases (immutable, include `node_modules`) | `invest-igator/releases/1.0.0` … `1.4.0` |
-| Active release | `invest-igator/current` (symlink → `releases/1.5.0`) |
+| Active release | `invest-igator/current` (symlink → `releases/1.5.1`) |
 | Key setup launchers | `invest-igator/Connect AI.command` (OpenAI), `invest-igator/Connect feeds.command` (Tiingo, SEC EDGAR contact, optional FMP) |
 | LaunchAgent backups | `invest-igator/service-config-backups/` |
 | Database, backups, logs, API key | `~/Library/Application Support/InvestmentResearch/` |
@@ -55,7 +55,7 @@ Node 20, Express, better-sqlite3, zod. Vanilla ES-module frontend, no bundler. O
 - **Workspace data**: one versioned JSON document in SQLite (`workspace` table, schema 1) with optimistic revisions. Collections: companies, evidence, snapshots, scenarios, decisions. Append-only history. The legacy `status` field is still stored (hidden in the form); the disposition replaces it in the UI.
 - **AI tables** (additive): `ai_settings`, `ai_runs` (with `analysis_id`), `ai_accepted`, `ai_analyses`. **Workflow table** (additive, 1.4.0): `dispositions`, append-only rows; the latest row per company is current. **Feed tables** (additive, 1.5.0): `price_observations`, `company_profile`, `feed_usage`, `feed_cache`, `feed_log`.
 - **Server** (`server/`): `index.js` entry, `app.js` routes, `access.js` host and origin policy, `store.js` persistence and backups, `model.js` schemas and valuation math, `research.js` job queue and sector-analysis orchestrator (run kinds review, question, forward_eps, snapshot, discovery, comparison, intake; `startRun` applies the key, daily-limit and queue checks; `onRunFinished` hook), `research-provider.js` OpenAI Responses adapter, `financial-snapshot.js` snapshot normalization and derived multiples, `sector-analysis.js` discovery and comparison, `intake.js` listing resolution and validation, `dispositions.js` mapping and override validation, `workflow.js` the `WorkflowService` (dispositions, intake orchestration, record fill-in, home overview), `feeds/` (`index.js` FeedService, `rate-limiter.js`, `calendar.js`, `errors.js`, `tiingo.js`, `edgar.js`, `coingecko.js`), `forward-eps.js`, `bounds.js`.
-- **Frontend** (`public/`): `app.js` (routes, company pages, manual forms), `home.js` (intake, lists, disposition control, company research summary), `research-panel.js` (assistant panel, inbox), `analysis.js` (sector analysis form, history, dashboard), `styles.css`.
+- **Frontend** (`public/`): `app.js` (routes, company pages, manual forms), `home.js` (intake, Invested and Watch sections, rows with Details, triggers, company research summary), `research-panel.js` (assistant panel, inbox), `analysis.js` (sector analysis form, history, dashboard), `styles.css` (dark token system for every page).
 - **Provider requests per run**: review 3 (5 with snapshot), question 1, forward EPS 2, snapshot 2, discovery 2, comparison 1, intake 2 (0 when every entry already matches a workspace company). With feeds connected a snapshot also makes up to one Tiingo and two SEC EDGAR requests (cached a day), and the search call is capped at three tool calls. A sector analysis makes 2 + 5 × companies + 1 requests and counts as one daily run. An intake counts as one daily run plus one run per company it researches.
 
 Reference docs: `README.md`, `docs/ARCHITECTURE.md`, `docs/API.md`, `docs/AI-RESEARCH.md`, `TEST-RESULTS.md`.
@@ -82,11 +82,10 @@ Full detail in `docs/NEXT-SESSIONS-PLAN.md`.
 
 | Session | Work | Release |
 |---|---|---|
-| Next | Home redesign requested by the owner on 2026-10-06 (dark mode, Project Signal brief): Watch and Invested as distinct sections, concise rows, triggers that would move a Watch company to an actionable view drawn from stored research | 1.5.1 |
 | 5 | Actual price performance alongside modeled upside and downside; Invested companies measured from their entry date and price | 1.6.0 |
 | 6 | Bulk ingestion of the what-if list as research candidates | 1.7.0 |
 
-The owner has tried the intake (Lumentum → LITE, Watch). Next for the owner: run `Connect feeds.command` so prices and financials come from feeds. The redesign is the next release; Sessions 5 and 6 follow.
+The owner has tried the intake (Lumentum → LITE, Watch) and asked for the redesign, shipped as 1.5.1. Next for the owner: review the redesign and run `Connect feeds.command` so prices and financials come from feeds. Sessions 5 and 6 follow.
 
 ## Known issues and limits
 
@@ -109,6 +108,6 @@ The owner has tried the intake (Lumentum → LITE, Watch). Next for the owner: r
 | 1 | 2026-09-13 (wrap-up 2026-10-02) | 1.3.0, 1.3.1 | `Session Reports/260913_SESSION-1-REPORT.md` |
 | 2 | 2026-10-02 | 1.3.2 | `Session Reports/261002_SESSION-2-REPORT.md` |
 | 3 | 2026-10-06 | 1.4.0, 1.4.1 | `Session Reports/261006_SESSION-3-REPORT.md`, `261006_SESSION-3B-REPORT.md` |
-| 4 | 2026-10-06 | 1.5.0 | `Session Reports/261006_SESSION-4-REPORT.md` |
+| 4 | 2026-10-06 | 1.5.0, 1.5.1 | `Session Reports/261006_SESSION-4-REPORT.md`, `261006_SESSION-4B-REPORT.md` |
 
 The Session 1 report and its session log were written before the owner's October 2 decisions. Where they say `main` is untouched, the import is blocked or holdings will be imported, this file is correct and they are not.

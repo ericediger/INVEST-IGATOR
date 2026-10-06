@@ -1,10 +1,12 @@
-# INVEST-IGATOR — local MVP 1.5.0
+# INVEST-IGATOR — local MVP 1.5.1
 
 Formerly "Investment Research"; renamed on October 2, 2026. Start with [HANDOFF.md](HANDOFF.md) for the current state and [the session plan](docs/NEXT-SESSIONS-PLAN.md) for what comes next. Release 1.4.0 (October 6, 2026) added the research workflow: add a company by name or ticker on **Home**, the assistant verifies the listing, researches it and files it as Watch, Research or Declined; you can override any filing and only you can mark a company **Invested**. Release 1.5.0 added price and financials feeds (Tiingo end-of-day closes, SEC EDGAR fiscal-year financials, CoinGecko for crypto): numbers come from feeds first and the model researches what they lack. Actual versus modeled performance is planned next. Internal identifiers keep the old name on purpose: the export format `investment-research`, the data folder `InvestmentResearch` and the LaunchAgent labels `com.investmentresearch.*`.
 
 Open **http://<lan-address>:5191** from your trusted home network, or **http://127.0.0.1:5191** on the server Mac. The workspace was seeded with ETN, VRT, NVT, APH, PWR, FIX and ANET as research candidates. Financial values start blank. No household account data was imported.
 
 ## Home: add companies and see where they stand
+
+Release 1.5.1 redesigned Home as a dark interface built for scanning. **Invested** and **Watch** are separate sections. Each row shows the ticker and name, what the company does, the disposition with who decides (the app or you) and when it was assessed (a **Stale** mark when the assessment is older than 30 days), one line that supports the disposition, and for Watch companies one line on what would move it. **Details** opens the rest: price, listing and multiples, why the rating, the full set of triggers from the stored research (evidence still needed, catalysts to watch, next steps, the Street consensus target), *Open full research*, *Research again* and the decision control. Research, Declined and Archived are separate views.
 
 On **Home**, type company names or tickers (comma-separated) into **Add companies** and choose **Add & research**. One research run verifies each listing (primary exchange, quote currency, what the company does); verified companies are added with a provenance note, filed as **Research**, and a snapshot-first review is queued for each automatically. If a name could mean more than one listed company, the candidates appear under the box for you to choose. Funds and unverifiable names are listed as not added. Companies already in the workspace are recognized without a paid call.
 

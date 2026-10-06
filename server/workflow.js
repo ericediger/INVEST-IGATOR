@@ -48,7 +48,7 @@ export class WorkflowService {
  latestAssessment(companyId){
   const row=this.db.prepare("SELECT id,created_at,analysis_id,document FROM ai_runs WHERE company_id=? AND kind='review' AND status='completed' ORDER BY created_at DESC,rowid DESC LIMIT 1").get(companyId);
   if(!row) return null; const j=JSON.parse(row.document), r=j.report; if(!r) return null;
-  return {runId:row.id,analysisId:row.analysis_id||null,createdAt:row.created_at,asOf:j.context.asOf,rating:r.recommendation,confidence:r.evidenceConfidence,summary:r.summary.text,model:j.model,sources:(j.sources||[]).length,accepted:!!this.db.prepare('SELECT run_id FROM ai_accepted WHERE run_id=?').get(row.id),detail:{bullCase:r.bullCase.map(p=>p.text),bearCase:r.bearCase.map(p=>p.text),catalysts:(r.catalysts||[]).map(p=>p.text),invalidationTriggers:r.invalidationTriggers,missingEvidence:r.missingEvidence,nextSteps:r.nextSteps}};
+  return {runId:row.id,analysisId:row.analysis_id||null,createdAt:row.created_at,updatedAt:row.updated_at,asOf:j.context.asOf,rating:r.recommendation,confidence:r.evidenceConfidence,summary:r.summary.text,model:j.model,sources:(j.sources||[]).length,accepted:!!this.db.prepare('SELECT run_id FROM ai_accepted WHERE run_id=?').get(row.id),detail:{rationale:r.rationale.text,valuation:r.valuationAssessment.text,bullCase:r.bullCase.map(p=>p.text),bearCase:r.bearCase.map(p=>p.text),catalysts:(r.catalysts||[]).map(p=>p.text),invalidationTriggers:r.invalidationTriggers,missingEvidence:r.missingEvidence,nextSteps:r.nextSteps}};
  }
  latestSnapshot(companyId){
   for(const row of this.db.prepare("SELECT id,created_at,document FROM ai_runs WHERE company_id=? AND status='completed' AND kind IN ('review','snapshot') ORDER BY created_at DESC,rowid DESC LIMIT 10").all(companyId)){
@@ -200,7 +200,10 @@ export class WorkflowService {
   const obs=this.feeds?this.feeds.latestPrice(c.id):null, feedPrice=obs?{value:obs.close,currency:obs.currency,asOfDate:obs.date,source:obs.source,fetchedAt:obs.fetchedAt}:null;
   const price=[feedPrice,aiPrice,manualPrice].filter(Boolean).sort((a,b)=>String(b.asOfDate||'').localeCompare(String(a.asOfDate||'')))[0]||null;
   if(price) price.ageDays=age(price.asOfDate);
-  const figures=s?{runId:snap.runId,asOf:s.asOf,comparable:s.quality.comparable,warnings:s.quality.warnings.length,missing:s.quality.missing.length,currency:s.financials.currency,marketCap:s.marketCap.value,marketCapCurrency:s.marketCap.currency,multiples:s.derived.multiples,margins:s.derived.margins,revenueGrowthPct:s.derived.revenueGrowthPct,revenueGrowthSource:s.derived.revenueGrowthSource,netDebt:s.derived.netDebt,periodLabel:s.financials.periodLabel,periodType:s.financials.periodType}:null;
+  const figures=s?{runId:snap.runId,asOf:s.asOf,comparable:s.quality.comparable,warnings:s.quality.warnings.length,missing:s.quality.missing.length,currency:s.financials.currency,marketCap:s.marketCap.value,marketCapCurrency:s.marketCap.currency,multiples:s.derived.multiples,margins:s.derived.margins,revenueGrowthPct:s.derived.revenueGrowthPct,revenueGrowthSource:s.derived.revenueGrowthSource,netDebt:s.derived.netDebt,periodLabel:s.financials.periodLabel,periodType:s.financials.periodType,consensus:{targetPrice:s.consensus.targetPrice,currency:s.consensus.currency,asOfDate:s.consensus.asOfDate,upsidePct:s.derived.multiples.priceToTarget}}:null;
+  // Freshness: an assessment older than 30 days is stale; a price older than 7 days is reported separately.
+  const assessmentAgeDays=assessment?age(assessment.asOf):null;
+  const freshness={assessmentAgeDays,priceAgeDays:price?price.ageDays:null,stale:assessmentAgeDays!==null&&assessmentAgeDays>30,priceStale:!!(price&&price.ageDays!==null&&price.ageDays>7)};
   const disposition=row?{value:row.disposition,setBy:row.setBy,since:row.createdAt,runId:row.runId,rating:row.rating,previous:row.previous,note:row.note,invested:row.invested,highlight:row.setBy==='app'&&row.rating==='Consider'?'Consider':null}
                        :{value:'Research',setBy:'app',since:null,runId:null,rating:null,previous:null,note:'No assessment yet.',invested:null,highlight:null};
   let notice=null;
@@ -210,6 +213,6 @@ export class WorkflowService {
   }
   const listing={exchange:c.exchange||s?.identity.exchange||'',currency:c.currency||s?.identity.quoteCurrency||s?.price.currency||null};
   listing.fromResearch=listing.exchange!==c.exchange||listing.currency!==c.currency;
-  return {id:c.id,ticker:c.ticker,name:c.name,role:c.role,archivedAt:c.archivedAt,reviewDate:c.reviewDate,status:c.status,listing,profile:this.feeds?this.feeds.profile(c.id):null,feedPrice,notes:{thesis:!!c.thesis,risks:!!c.risks,disconfirming:!!c.disconfirming},disposition,notice,assessment,price,figures,pending,manualSnapshots:workspace.snapshots.filter(x=>x.companyId===c.id).length,scenarios:workspace.scenarios.filter(x=>x.companyId===c.id).length,decisions:workspace.decisions.filter(x=>x.companyId===c.id).length};
+  return {id:c.id,ticker:c.ticker,name:c.name,role:c.role,archivedAt:c.archivedAt,reviewDate:c.reviewDate,status:c.status,listing,profile:this.feeds?this.feeds.profile(c.id):null,feedPrice,freshness,notes:{thesis:!!c.thesis,risks:!!c.risks,disconfirming:!!c.disconfirming},disposition,notice,assessment,price,figures,pending,manualSnapshots:workspace.snapshots.filter(x=>x.companyId===c.id).length,scenarios:workspace.scenarios.filter(x=>x.companyId===c.id).length,decisions:workspace.decisions.filter(x=>x.companyId===c.id).length};
  }
 }

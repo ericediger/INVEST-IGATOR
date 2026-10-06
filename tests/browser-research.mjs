@@ -52,8 +52,9 @@ try{
   await page.goto(root+'/#home');await page.locator('.home-row[data-ticker="ETN"]').waitFor();
   const row=page.locator('.home-row[data-ticker="ETN"]'),text=await row.textContent();
   assert.ok(text.includes('USD 123.45'));assert.ok(text.includes('Fwd P/E'));assert.ok(text.includes('NYSE'));assert.ok(text.includes('SYNTHETIC UI TEST'));assert.ok(/Tiingo close|Research snapshot/.test(text),'the price is labeled with its source');
-  assert.equal(await row.locator('.home-disposition .badge.watching').count(),1);assert.equal(await row.locator('.home-disposition .badge.owner').count(),0);
-  assert.ok((await page.locator('#home-tabs').textContent()).includes('Research 6'));
+  assert.equal(await row.locator('.home-disposition .badge.watching').count(),1);assert.equal(await row.locator('.home-disposition .badge.owner').count(),0);assert.ok(text.includes('App decides'));assert.ok(/assessed (today|yesterday)/.test(text));assert.equal(await row.locator('.badge.warning').filter({hasText:'Stale'}).count(),0);
+  assert.ok((await page.locator('#home-tabs').textContent()).includes('Research 6'));assert.ok((await page.locator('#home-rows').textContent()).includes('Invested'));assert.ok((await page.locator('#home-rows h2').first().textContent()).includes('Invested'));
+  await row.locator('.row-details > summary').click();assert.ok(await row.locator('.row-details[open] .disp-select').isVisible());assert.ok((await row.locator('.row-triggers').textContent()).includes('Evidence still needed'));
   await page.locator('#home-tabs a[href="#home/research"]').click();await page.waitForFunction(()=>document.querySelectorAll('.home-row').length===6);
   assert.equal(await page.locator('.home-row[data-ticker="ETN"]').count(),0);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
@@ -75,17 +76,19 @@ try{
   assert.equal(overview.companies.find(c=>c.ticker==='IEX').disposition.value,'Watch');assert.equal(overview.companies.find(c=>c.ticker==='IEX').disposition.setBy,'app');
  });
  await check('owner overrides: Declined sticks and moves the company, Invested records the entry, and releasing returns the app value',async()=>{
-  await page.locator('.home-row[data-ticker="IEX"] .disp-select').selectOption('Declined');
+  const openIEX=async()=>{const dt=page.locator('.home-row[data-ticker="IEX"] .row-details');if(!await dt.evaluate(d=>d.open))await dt.locator('> summary').click();};
+  await openIEX();await page.locator('.home-row[data-ticker="IEX"] .disp-select').selectOption('Declined');
   await page.waitForFunction(()=>document.querySelector('.home-row[data-ticker="IEX"]')===null);
   await page.locator('#home-tabs a[href="#home/declined"]').click();await page.locator('.home-row[data-ticker="IEX"] .home-disposition .badge.owner').waitFor();
   assert.ok((await page.locator('.home-row[data-ticker="IEX"] .home-disposition').textContent()).includes('Declined'));
-  await page.locator('.home-row[data-ticker="IEX"] .disp-select').selectOption('Invested');await page.locator('.home-row[data-ticker="IEX"] .invested-form').waitFor();
+  await openIEX();await page.locator('.home-row[data-ticker="IEX"] .disp-select').selectOption('Invested');await page.locator('.home-row[data-ticker="IEX"] .invested-form').waitFor();
   await page.locator('.home-row[data-ticker="IEX"] input[name=price]').fill('120.5');await page.locator('.home-row[data-ticker="IEX"] input[name=quantity]').fill('10');await page.locator('.home-row[data-ticker="IEX"] .invested-form button[type=submit]').click();
   await page.waitForFunction(()=>document.querySelector('.home-row[data-ticker="IEX"]')===null);
   await page.locator('#home-tabs a[href="#home"]').click();await page.locator('.home-row[data-ticker="IEX"] .home-disposition .badge.invested').waitFor();
-  const t=await page.locator('.home-row[data-ticker="IEX"] .home-disposition').textContent();assert.ok(t.includes('Invested'));assert.ok(t.includes('120.5'));assert.ok(t.includes('10 shares'));
+  const t=await page.locator('.home-row[data-ticker="IEX"]').textContent();assert.ok(t.includes('Invested'),'badge');assert.ok(t.includes('120.5'),'entry price in details');assert.ok(t.includes('10 shares'),'quantity in details');assert.ok(t.includes('You decide'),'owner shown as decider');
   let overview=await(await page.request.get(root+'/api/workflow/overview')).json();let e=overview.companies.find(c=>c.ticker==='IEX');assert.equal(e.disposition.setBy,'owner');assert.equal(e.disposition.invested.price,120.5);assert.equal(e.disposition.invested.currency,'USD');assert.equal(e.disposition.invested.quantity,10);
-  await page.locator('.home-row[data-ticker="IEX"] .disp-select').selectOption('auto');await page.locator('.home-row[data-ticker="IEX"] .home-disposition .badge.watching').waitFor();
+  assert.ok((await page.locator('#home-rows h2').first().textContent()).includes('Invested'),'Invested companies sit in their own section');
+  await openIEX();await page.locator('.home-row[data-ticker="IEX"] .disp-select').selectOption('auto');await page.locator('.home-row[data-ticker="IEX"] .home-disposition .badge.watching').waitFor();
   assert.equal(await page.locator('.home-row[data-ticker="IEX"] .home-disposition .badge.owner').count(),0);
   overview=await(await page.request.get(root+'/api/workflow/overview')).json();e=overview.companies.find(c=>c.ticker==='IEX');assert.equal(e.disposition.setBy,'app');assert.equal(e.disposition.value,'Watch');
  });
