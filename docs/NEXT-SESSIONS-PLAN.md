@@ -1,6 +1,6 @@
 # Next sessions plan — INVEST-IGATOR
 
-Written 2026-10-02 after a read-only review of every project document, the source repository, the installed release and the live service. Revised the same day with the owner's answers (section 2) and research on the price feed and agent roles (section 5).
+Written 2026-10-02 after a read-only review of every project document, the source repository, the installed release and the live service. Revised the same day with the owner's answers (section 2) and research on the price feed and agent roles (section 5). Updated 2026-10-06 after Session 3 shipped release 1.4.0 (section 6) and the owner approved the open items in section 7.
 
 The app was renamed from "Investment Research" to INVEST-IGATOR on 2026-10-02, and Session 2A below was carried out the same day. `HANDOFF.md` is the starting point; this plan holds the detail behind its "Next steps".
 
@@ -31,7 +31,7 @@ The code is not confused; only the documents are. Nothing needs repair or rollba
 6. **Research the agent roles**: calling and extracting, entering, and analysis. Findings in section 5.
 7. **Rename to INVEST-IGATOR**, both the folder and the application.
 
-Still assumed, not confirmed: the main list shows only Watch and Invested companies, with Research and Declined on their own views (from the Codex note); equal weighting for the group figures.
+On 2026-10-06 the owner answered "Proceed on all" to the Session 3 scope, the merge of the Session 2 branch and the open questions below. Applied as: the main list shows only Watch and Invested companies, with Research, Declined and Archived on their own tabs; marking Invested needs the entry date and entry price, with quantity and amount optional; no second model provider (everything stays on the configured OpenAI model); the Session 2 branch was merged into `main`. Still assumed: equal weighting for the group figures (Session 5).
 
 ## 3. Where the two agents collided, and the rule from now on
 
@@ -135,9 +135,9 @@ Each session ends with tests passing, a commit, a rewritten `HANDOFF.md` and a s
 - Deploy scripts now find the app folder from their own location, so a future folder rename needs only the LaunchAgents and the `current` link repointed.
 - Work is on branch `session-2-invest-igator`; merging to `main` waits for the owner.
 
-### Session 3 — Workflow: intake, dispositions, home screen (release 1.4.0)
+### Session 3 — Workflow: intake, dispositions, home screen (done 2026-10-06, release 1.4.0)
 
-The session the owner tests by adding a few companies by hand.
+The session the owner tests by adding a few companies by hand. Shipped as planned, with these details decided during the build: intake is a two-request run (web search, structured extraction) that resolves names or tickers to primary listings and asks only when a name could mean more than one listed company; each verified company gets a snapshot-first review queued automatically (one daily run each); the app files Research / Watch / Declined from the latest completed company assessment (not from the sector ranking, which stays on its dashboard); a blank exchange or currency on the record is filled from the verified snapshot; the research summary is derived from the stored assessment rather than written into the owner's thesis, risks and disconfirming-evidence fields, which remain the owner's notes. See `Session Reports/261006_SESSION-3-REPORT.md`.
 
 - **Intake**: a box on the home screen that takes a company name, a ticker or several. Each is resolved to a verified listing and queued for research with no further prompting. Ask only when a listing is ambiguous. Sector analysis stays as it is and feeds the same records.
 - **Dispositions** as in section 4, applied automatically, with override and the Invested option. Additive storage; workspace schema stays at 1 so rollback works.
@@ -179,10 +179,12 @@ The session the owner tests by adding a few companies by hand.
 - Review of a full six-company live sector analysis.
 - The four operational defaults from Session 1 (daily-limit accounting, automatic company creation, Consider gating, concurrency of 2): leave as shipped unless one causes a problem.
 
-## 7. Still to confirm with the owner
+## 7. Owner answers (2026-10-06: "Proceed on all")
 
-1. Main list shows only Watch and Invested, with Research and Declined on separate views?
-2. When marking Invested: is date and entry price enough, or should amount be required?
-3. Is a second model provider for the analysis stage acceptable, or should everything stay with the current one?
-4. Which agent runs which session? Either works under the rules in section 3.
-5. Merge branch `session-2-invest-igator` into `main`?
+1. Main list shows only Watch and Invested; Research, Declined and Archived are separate tabs. Done in 1.4.0.
+2. Marking Invested needs the entry date and entry price; quantity and amount are optional. Done in 1.4.0.
+3. No second model provider; the analysis stays on the configured OpenAI model.
+4. Claude ran Session 3. Either agent may run Session 4 under the rules in section 3.
+5. `session-2-invest-igator` was merged into `main` (fast-forward) at the start of Session 3; Session 3 was merged the same way at its end.
+
+Still to confirm before Session 4: which Tiingo and FMP keys may be shared with this app, and whether the daily price fetch may run from the existing backup LaunchAgent schedule or needs its own.

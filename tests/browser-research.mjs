@@ -47,6 +47,64 @@ try{
  await check('inbox opens the saved assessment and history survives a browser reload',async()=>{
   await page.locator('[data-ai-run]').first().click();await page.locator('.ai-verdict').waitFor();await page.reload();await page.locator('.ai-verdict').waitFor();assert.equal(await page.locator('#research-toggle').getAttribute('aria-expanded'),'true');
  });
+ await check('home shows the stored assessment, dated price, multiples and automatic disposition for a researched company',async()=>{
+  if(await page.locator('#research-panel').isVisible())await page.locator('#ai-close').click();
+  await page.goto(root+'/#home');await page.locator('.home-row[data-ticker="ETN"]').waitFor();
+  const row=page.locator('.home-row[data-ticker="ETN"]'),text=await row.textContent();
+  assert.ok(text.includes('USD 123.45'));assert.ok(text.includes('Fwd P/E'));assert.ok(text.includes('NYSE'));assert.ok(text.includes('SYNTHETIC UI TEST'));assert.ok(text.includes('Research snapshot'));
+  assert.equal(await row.locator('.home-disposition .badge.watching').count(),1);assert.equal(await row.locator('.home-disposition .badge.owner').count(),0);
+  assert.ok((await page.locator('#home-tabs').textContent()).includes('Research 6'));
+  await page.locator('#home-tabs a[href="#home/research"]').click();await page.waitForFunction(()=>document.querySelectorAll('.home-row').length===6);
+  assert.equal(await page.locator('.home-row[data-ticker="ETN"]').count(),0);
+  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+  await page.goto(root+'/#home');await page.locator('.home-row[data-ticker="ETN"]').waitFor();await page.screenshot({path:out+'/home-desktop.png',fullPage:true});
+ });
+ await check('intake verifies listings, adds the company with research queued, asks about an ambiguous name and files the result automatically',async()=>{
+  await page.locator('#intake-entries').fill('Intake Example Corp, Ambiguous Holdings, Nowhere Inc');await page.locator('#intake-submit').click();
+  await page.locator('.intake-entries [data-choose]').first().waitFor({timeout:20000});
+  const status=await page.locator('#intake-status').textContent();
+  assert.ok(status.includes('Intake Example Corp'));assert.ok(status.includes('not found'));assert.ok(status.includes('Ambiguous Holdings plc'));assert.ok(status.includes('Ambiguous Holdings AG'));
+  await page.waitForFunction(()=>document.querySelector('.home-row[data-ticker="IEX"] .home-disposition .badge.watching'),{},{timeout:30000});
+  assert.ok((await page.locator('.home-row[data-ticker="IEX"] .home-figures').textContent()).includes('USD 123.45'));
+  await page.locator('.intake-entries [data-choose][data-candidate="1"]').click();
+  await page.waitForFunction(()=>document.querySelector('#intake-status')?.textContent.includes('already listed')||document.querySelector('#intake-status')?.textContent.includes('Ambiguous Holdings → '));
+  const data=(await(await page.request.get(root+'/api/workspace')).json()).workspace;
+  const iex=data.companies.find(c=>c.ticker==='IEX');assert.ok(iex);assert.equal(iex.exchange,'NYSE');assert.equal(iex.currency,'USD');assert.equal(iex.role,'SYNTHETIC UI TEST company.');assert.ok(data.evidence.some(e=>e.companyId===iex.id&&e.author==='Company intake'));
+  assert.ok(data.companies.find(c=>c.ticker==='AMBG'));assert.ok(!data.companies.find(c=>c.ticker==='AMBH'));assert.ok(!data.companies.find(c=>/nowhere/i.test(c.name)));
+  const overview=await(await page.request.get(root+'/api/workflow/overview')).json();
+  assert.equal(overview.companies.find(c=>c.ticker==='IEX').disposition.value,'Watch');assert.equal(overview.companies.find(c=>c.ticker==='IEX').disposition.setBy,'app');
+ });
+ await check('owner overrides: Declined sticks and moves the company, Invested records the entry, and releasing returns the app value',async()=>{
+  await page.locator('.home-row[data-ticker="IEX"] .disp-select').selectOption('Declined');
+  await page.waitForFunction(()=>document.querySelector('.home-row[data-ticker="IEX"]')===null);
+  await page.locator('#home-tabs a[href="#home/declined"]').click();await page.locator('.home-row[data-ticker="IEX"] .home-disposition .badge.owner').waitFor();
+  assert.ok((await page.locator('.home-row[data-ticker="IEX"] .home-disposition').textContent()).includes('Declined'));
+  await page.locator('.home-row[data-ticker="IEX"] .disp-select').selectOption('Invested');await page.locator('.home-row[data-ticker="IEX"] .invested-form').waitFor();
+  await page.locator('.home-row[data-ticker="IEX"] input[name=price]').fill('120.5');await page.locator('.home-row[data-ticker="IEX"] input[name=quantity]').fill('10');await page.locator('.home-row[data-ticker="IEX"] .invested-form button[type=submit]').click();
+  await page.waitForFunction(()=>document.querySelector('.home-row[data-ticker="IEX"]')===null);
+  await page.locator('#home-tabs a[href="#home"]').click();await page.locator('.home-row[data-ticker="IEX"] .home-disposition .badge.invested').waitFor();
+  const t=await page.locator('.home-row[data-ticker="IEX"] .home-disposition').textContent();assert.ok(t.includes('Invested'));assert.ok(t.includes('120.5'));assert.ok(t.includes('10 shares'));
+  let overview=await(await page.request.get(root+'/api/workflow/overview')).json();let e=overview.companies.find(c=>c.ticker==='IEX');assert.equal(e.disposition.setBy,'owner');assert.equal(e.disposition.invested.price,120.5);assert.equal(e.disposition.invested.currency,'USD');assert.equal(e.disposition.invested.quantity,10);
+  await page.locator('.home-row[data-ticker="IEX"] .disp-select').selectOption('auto');await page.locator('.home-row[data-ticker="IEX"] .home-disposition .badge.watching').waitFor();
+  assert.equal(await page.locator('.home-row[data-ticker="IEX"] .home-disposition .badge.owner').count(),0);
+  overview=await(await page.request.get(root+'/api/workflow/overview')).json();e=overview.companies.find(c=>c.ticker==='IEX');assert.equal(e.disposition.setBy,'app');assert.equal(e.disposition.value,'Watch');
+ });
+ await check('the company page shows the research summary with figures, challenges and the disposition control',async()=>{
+  const iex=(await(await page.request.get(root+'/api/workspace')).json()).workspace.companies.find(c=>c.ticker==='IEX');
+  await page.goto(root+'/#company/'+iex.id+'/overview');await page.locator('.research-summary .disp-select').waitFor(); // the company was created server-side; the page re-reads the workspace
+  const text=await page.locator('.research-summary').textContent();
+  assert.ok(text.includes('Research summary'));assert.ok(text.includes('What challenges the case'));assert.ok(text.includes('Forward P/E'));assert.ok(text.includes('USD 123.45'));
+  assert.equal(await page.locator('#company-form select#status').count(),0);assert.equal(await page.locator('#company-form input[name=status]').count(),1);
+  assert.ok((await page.locator('label[for=role]').textContent()).includes('What the company does'));
+  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+ });
+ await check('the mobile home screen fits the viewport',async()=>{
+  await page.setViewportSize({width:390,height:844});await page.goto(root+'/#home');await page.locator('.home-row').first().waitFor();
+  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+  await page.screenshot({path:out+'/home-mobile.png',fullPage:true});await page.setViewportSize({width:1440,height:1000});
+  await page.goto(root+'/#company/'+companies[0].id+'/overview');await page.locator('#company-form').waitFor();
+  if(!await page.locator('#research-panel').isVisible())await page.locator('#research-toggle').click();await page.locator('#ai-question').waitFor();await page.waitForFunction(id=>document.querySelector('#ai-company')?.value===id,companies[0].id);
+ });
  await check('follow-up answer links sources and escapes source HTML',async()=>{
   await page.locator('#ai-question').fill('What evidence challenges this? <img src=x onerror=window.fixtureXSS=1>');await page.locator('#ai-ask').click();
   await waitFor(page,()=>document.querySelector('#ai-result h3')?.textContent.startsWith('What evidence challenges this?'));
@@ -136,4 +194,4 @@ try{
  assert.deepEqual(errors,[]);checks.push('No browser JavaScript errors');
  writeFileSync(out+'/results.json',JSON.stringify({checks,errors,provider:'Synthetic only; no OpenAI calls',viewportSizes:['1440×1000','390×844','720×500 (200%-equivalent)']},null,2));
  console.log(JSON.stringify({passed:checks.length,errors}));
-}finally{await browser?.close();if(child.exitCode===null){child.kill('SIGTERM');await once(child,'exit');}}
+}catch(error){console.error('FAILED after',checks.length,'checks:',error.message);console.error('Page errors:',JSON.stringify(errors));throw error;}finally{await browser?.close();if(child.exitCode===null){child.kill('SIGTERM');await once(child,'exit');}}

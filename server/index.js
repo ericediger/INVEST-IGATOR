@@ -1,5 +1,6 @@
 import {resolve} from 'node:path';
 import {ResearchService} from './research.js';
+import {WorkflowService} from './workflow.js';
 import {OpenAIResearchProvider,readAPIKey} from './research-provider.js';
 import {Store} from './store.js';
 import {createApp} from './app.js';
@@ -10,7 +11,8 @@ if(!Number.isInteger(port)||port<1024||port>65535) throw new Error('Invalid port
 const options={origin:`http://127.0.0.1:${port}`,lanAddress:process.env.RESEARCH_LAN_ADDRESS||null,trustedSubnet:process.env.RESEARCH_TRUSTED_SUBNET||null};
 const policy=accessPolicy(options),store=new Store(resolve(data,'research.sqlite'),resolve(data,'backups'));
 const research=new ResearchService(store,new OpenAIResearchProvider({key:()=>readAPIKey(data)}));
-const app=createApp(store,{...options,research});
+const workflow=new WorkflowService(store,research);
+const app=createApp(store,{...options,research,workflow});
 const servers=policy.addresses.map(address=>{
   const server=app.listen(port,address,()=>console.log(`INVEST-IGATOR: http://${address}:${port}`));
   server.requestTimeout=30000; server.headersTimeout=15000;

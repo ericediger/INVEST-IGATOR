@@ -4,6 +4,7 @@ import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {Store} from '../server/store.js';
 import {ResearchService} from '../server/research.js';
+import {WorkflowService} from '../server/workflow.js';
 import {createApp} from '../server/app.js';
 const dir=mkdtempSync(join(tmpdir(),'research-browser-fixture-'));
 const store=new Store(join(dir,'research.sqlite'),join(dir,'backups'));
@@ -21,6 +22,8 @@ const snapshot=(ticker,asOf)=>({identity:{name:`${ticker} Synthetic Co`,ticker,e
 const discovery={sectorDefinition:'SYNTHETIC UI TEST — a fixture sector definition.',candidates:[{name:'Eaton',ticker:'ETN',exchange:'NYSE',listingCountry:'US',quoteCurrency:'USD',securityType:'Common',relevance:'SYNTHETIC seed company.',approximateMarketCap:null,marketCapCurrency:null,isSeed:true,confidence:'High',sourceIds:['S1']},{name:'Synthetic Peer Inc',ticker:'SYN',exchange:'NYSE',listingCountry:'US',quoteCurrency:'USD',securityType:'Common',relevance:'SYNTHETIC discovered peer.',approximateMarketCap:10000000000,marketCapCurrency:'USD',isSeed:false,confidence:'Moderate',sourceIds:['S2']},{name:'Overflow Co',ticker:'OVF',exchange:'NYSE',listingCountry:'US',quoteCurrency:'USD',securityType:'Common',relevance:'SYNTHETIC overflow.',approximateMarketCap:null,marketCapCurrency:null,isSeed:false,confidence:'Low',sourceIds:[]}],excluded:[{name:'Fixture ETF',reason:'Fund, not a company.'}],notes:'SYNTHETIC UI TEST notes.'};
 const comparison=input=>{const companies=JSON.parse(input.match(/Companies: (\[.*\])\nSource registry/s)[1]),registry=JSON.parse(input.split('Source registry: ')[1]),ids=[registry[0].id];
  return {sectorSummary:{text:'SYNTHETIC UI TEST — sector summary for dashboard verification.',sourceIds:ids},ranking:companies.map((c,i)=>({ticker:c.ticker,rank:i+1,rating:i===0?'Consider':'Watch',thesis:{text:`SYNTHETIC UI TEST — thesis for ${c.ticker}.`,sourceIds:ids},keyEvidence:[{text:'SYNTHETIC UI TEST — key evidence.',sourceIds:ids}],valuation:{text:'SYNTHETIC UI TEST — valuation view quoting app multiples.',sourceIds:[]},relativeAttractiveness:{text:`SYNTHETIC UI TEST — ${c.ticker} versus peers.`,sourceIds:[]},catalysts:['SYNTHETIC catalyst'],risks:['SYNTHETIC risk'],invalidation:['SYNTHETIC invalidation trigger'],confidence:'Moderate',dataLimitations:[]})),preferredRationale:{text:'SYNTHETIC UI TEST — why the leader ranks first.',sourceIds:ids},sectorRisks:['SYNTHETIC sector risk'],assumptions:['SYNTHETIC assumption'],caveats:['SYNTHETIC caveat']};};
+const cand=(name,ticker,exchange,country,currency)=>({name,ticker,exchange,listingCountry:country,quoteCurrency:currency,securityType:'Common',description:'SYNTHETIC UI TEST company.',confidence:'High',sourceIds:['S1']});
+const intake=queries=>({entries:queries.map(query=>/ambiguous/i.test(query)?{query,status:'ambiguous',candidates:[cand('Ambiguous Holdings plc','AMBH','LSE','GB','GBP'),cand('Ambiguous Holdings AG','AMBG','XETRA','DE','EUR')],notes:'Two listed companies share this name.'}:/nowhere/i.test(query)?{query,status:'unresolved',candidates:[],notes:'No current listing could be verified.'}:{query,status:'resolved',candidates:[cand(/intake example/i.test(query)?'Intake Example Corp':query+' Corp',/intake example/i.test(query)?'IEX':query.replace(/[^A-Za-z]/g,'').slice(0,4).toUpperCase(),'NYSE','US','USD')],notes:''})});
 let calls=0;
 const provider={model:'SYNTHETIC-browser-fixture',configured:()=>true,async request(input){
  await new Promise(r=>setTimeout(r,250));calls++;
@@ -32,10 +35,11 @@ const provider={model:'SYNTHETIC-browser-fixture',configured:()=>true,async requ
   else if(input.schemaName==='sector_discovery')text=JSON.stringify(discovery);
   else if(input.schemaName==='financial_snapshot'){const ticker=JSON.parse(input.input.match(/Company: (\{.*?\})\n/s)[1]).ticker,asOf=input.input.match(/As of: (\d{4}-\d{2}-\d{2})/)[1];text=JSON.stringify(snapshot(ticker,asOf));}
   else if(input.schemaName==='sector_comparison')text=JSON.stringify(comparison(input.input));
+  else if(input.schemaName==='intake_resolution')text=JSON.stringify(intake(JSON.parse(input.input.match(/Owner entries: (\[.*?\])\n/s)[1])));
   else text=JSON.stringify(report);
  } else {text=`SYNTHETIC UI TEST — a cited answer. [Fixture source](${url}) <script>window.fixtureXSS=1</script>`;annotations=[{type:'url_citation',url:'https://example.com/filing',title:'SYNTHETIC source'},{type:'url_citation',url:'https://example.com/challenge',title:'SYNTHETIC challenge source'}];}
  return {id:`fixture-${calls}`,model:this.model,status:'completed',usage:{input_tokens:10,output_tokens:20},output:[{type:'message',content:[{type:'output_text',text,annotations}]}]};
 }};
-const research=new ResearchService(store,provider,{concurrency:2}),root='http://127.0.0.1:5197';
-const server=createApp(store,{origin:root,research}).listen(5197,'127.0.0.1',()=>console.log('Browser fixture ready'));
+const research=new ResearchService(store,provider,{concurrency:2}),root='http://127.0.0.1:5197',workflow=new WorkflowService(store,research);
+const server=createApp(store,{origin:root,research,workflow}).listen(5197,'127.0.0.1',()=>console.log('Browser fixture ready'));
 process.on('SIGTERM',()=>{research.close();server.close(()=>{store.close();process.exit(0);});});

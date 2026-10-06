@@ -1,7 +1,7 @@
 const $=s=>document.querySelector(s);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const stamp=s=>new Date(s).toLocaleString();
-const KIND_LABELS={review:'Assessment',forward_eps:'Forward EPS',snapshot:'Financial snapshot',discovery:'Sector discovery',comparison:'Sector ranking'};
+const KIND_LABELS={review:'Assessment',forward_eps:'Forward EPS',snapshot:'Financial snapshot',discovery:'Sector discovery',comparison:'Sector ranking',intake:'Company intake'};
 const runLabel=r=>KIND_LABELS[r.kind]||r.question.slice(0,45);
 const fmtMoney=v=>{const a=Math.abs(v);return a>=1e9?(v/1e9).toFixed(2)+'bn':a>=1e6?(v/1e6).toFixed(1)+'m':a>=1e3?(v/1e3).toFixed(1)+'k':v.toFixed(2);};
 export function snapshotHTML(s,sources){
@@ -105,7 +105,7 @@ async function poll(){
 }
 function renderRun(){
  if(!current)return;const j=current,out=$('#ai-result');out.dataset.run=j.id;
- if(!j.companyId){out.innerHTML=`<p class="meta">${esc(j.context.analysis?.sector||'Sector analysis')} · ${stamp(j.createdAt)}</p><div class="ai-callout"><strong>${esc(runLabel(j))} · ${esc(j.status)}</strong><p>${esc(j.stage)}</p>${j.analysisId?`<p><a href="#analysis/${esc(j.analysisId)}">Open the sector dashboard</a></p>`:''}</div>`;return;}
+ if(!j.companyId){out.innerHTML=`<p class="meta">${esc(j.context.analysis?.sector||j.context.intake?.label||'Sector analysis')} · ${stamp(j.createdAt)}</p><div class="ai-callout"><strong>${esc(runLabel(j))} · ${esc(j.status)}</strong><p>${esc(j.stage)}</p>${j.analysisId?`<p><a href="#analysis/${esc(j.analysisId)}">Open the sector dashboard</a></p>`:j.kind==='intake'?'<p><a href="#home">Open Home</a></p>':''}</div>`;return;}
  const meta=`<p class="meta">${esc(j.context.company.ticker)} · ${stamp(j.createdAt)}${j.analysisId?` · <a href="#analysis/${esc(j.analysisId)}">part of a sector analysis</a>`:''}<br>${j.context.mandate.horizonMonths}-month horizon · Company merits only</p>`;
  if(['queued','running'].includes(j.status)){out.innerHTML=meta+`<div class="ai-callout"><strong role="status">${esc(j.stage)}</strong><p>You can leave this page. Work continues while the server is running.</p><button id="ai-cancel" type="button">Stop research</button></div>`;$('#ai-cancel').onclick=async()=>{try{current=await api('runs/'+j.id+'/cancel',{});renderRun();await poll();}catch(e){showError(e);}};return;}
  if(j.status!=='completed'){out.innerHTML=meta+`<div class="ai-callout"><strong>${esc(j.stage)}</strong><p>${esc(j.error||'A new run is needed to continue. Previous research and saved notes are preserved.')}</p><p class="hint">No automatic retry was made. Provider usage may still be charged.</p></div>`;return;}
@@ -151,7 +151,7 @@ function renderRun(){
 export async function renderResearchInbox(){
  const token=++inboxToken;const data=await api('runs');if(location.hash!=='#research'||token!==inboxToken)return;
  const target=$('#ai-inbox-rows');if(!target)return;
- const html=data.runs.length?data.runs.map(r=>`<article class="company-row ai-inbox-row"><div><strong>${esc(r.ticker)}</strong><p class="role">${r.kind==='review'?'Company assessment':r.kind==='question'?esc(r.question.slice(0,120)):esc(runLabel(r))}${r.analysisId&&r.companyId?' · sector analysis':''}</p><small>${stamp(r.createdAt)}</small></div><div><span class="badge">${esc(r.recommendation||r.status)}</span><small>${esc(r.stage)}</small>${r.acceptedEvidenceId?'<small>Saved as evidence</small>':''}</div>${r.companyId?`<button type="button" data-ai-run="${r.id}" data-company="${r.companyId}">Open research</button>`:`<a class="button" href="#analysis/${esc(r.analysisId)}">Open dashboard</a>`}</article>`).join(''):'<div class="empty"><h2>Your research inbox</h2><p>Completed assessments and follow-up answers will appear here.</p><button type="button" id="ai-inbox-start">Open research assistant</button></div>';
+ const html=data.runs.length?data.runs.map(r=>`<article class="company-row ai-inbox-row"><div><strong>${esc(r.ticker)}</strong><p class="role">${r.kind==='review'?'Company assessment':r.kind==='question'?esc(r.question.slice(0,120)):esc(runLabel(r))}${r.analysisId&&r.companyId?' · sector analysis':''}</p><small>${stamp(r.createdAt)}</small></div><div><span class="badge">${esc(r.recommendation||r.status)}</span><small>${esc(r.stage)}</small>${r.acceptedEvidenceId?'<small>Saved as evidence</small>':''}</div>${r.companyId?`<button type="button" data-ai-run="${r.id}" data-company="${r.companyId}">Open research</button>`:r.analysisId?`<a class="button" href="#analysis/${esc(r.analysisId)}">Open dashboard</a>`:'<a class="button" href="#home">Open Home</a>'}</article>`).join(''):'<div class="empty"><h2>Your research inbox</h2><p>Completed assessments and follow-up answers will appear here.</p><button type="button" id="ai-inbox-start">Open research assistant</button></div>';
  if(target.innerHTML!==html){target.innerHTML=html;target.querySelectorAll('[data-ai-run]').forEach(b=>b.onclick=()=>showRun(b.dataset.company,b.dataset.aiRun).catch(showError));if($('#ai-inbox-start'))$('#ai-inbox-start').onclick=()=>setOpen(true);}
 }
 
