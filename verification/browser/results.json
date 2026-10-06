@@ -14,6 +14,8 @@
     "follow-up answer links sources and escapes source HTML",
     "late background polling cannot replace a newly selected history item",
     "settings retain a dirty draft when another client saves; stale save is rejected",
+    "the mandate form saves per-stage model settings and reloads them",
+    "Data & backups shows the feed status, Home refreshes Tiingo closes, and the company page saves listing and feed settings",
     "Escape closes the panel and returns focus to its launcher",
     "mobile panel and report fit the viewport",
     "200%-equivalent CSS viewport fits and panel remains operable",

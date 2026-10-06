@@ -57,7 +57,8 @@ export class OpenAIResearchProvider {
     this.key = key; this.model = model; this.reasoningEffort = reasoningEffort; this.fetcher = fetcher;
   }
   configured() { return !!this.key(); }
-  async request({instructions, input, search = false, schema = null, schemaName = 'investment_assessment', maxToolCalls = 4, signal}) {
+  async request({instructions, input, search = false, schema = null, schemaName = 'investment_assessment', maxToolCalls = 4, signal, model = null, reasoningEffort = null}) {
+    if (reasoningEffort && !['low','medium','high','xhigh','max'].includes(reasoningEffort)) fail('Unsupported reasoning effort for this stage.');
     const key = this.key();
     if (!key) fail('Connect an OpenAI API key on the server to run research.', 503);
     const timeout = AbortSignal.timeout(240000);
@@ -69,7 +70,7 @@ export class OpenAIResearchProvider {
     try {
       const response = await this.fetcher('https://api.openai.com/v1/responses', {
         method: 'POST', headers: {'Content-Type': 'application/json', Authorization: `Bearer ${key}`}, signal: controller.signal,
-        body: JSON.stringify({model: this.model, reasoning: {effort: this.reasoningEffort}, store: false, instructions, input, max_output_tokens: 6500,
+        body: JSON.stringify({model: model || this.model, reasoning: {effort: reasoningEffort || this.reasoningEffort}, store: false, instructions, input, max_output_tokens: 6500,
           ...(search ? {tools: [{type: 'web_search'}], tool_choice: 'required', max_tool_calls: Math.min(8, Math.max(1, maxToolCalls))} : {}),
           ...(schema ? {text: {format: {type: 'json_schema', name: schemaName, strict: true, schema}}} : {})})
       });

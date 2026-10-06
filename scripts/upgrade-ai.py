@@ -35,13 +35,17 @@ if any(r['status'] in ('queued','running') for r in request('/api/research/runs'
 backup=request('/api/backup',{})['backup']
 if not release.exists():shutil.copytree(source,release,ignore=shutil.ignore_patterns('.git','runtime','.env','*.sqlite','*.sqlite-wal','*.sqlite-shm','*.db','.DS_Store','__pycache__','.claude','.codex','Session Reports','session-logs','HANDOFF.md','AGENTS.md','CLAUDE.md'))
 # The locked, already installed dependencies are copied with the verified source. No runtime secrets are in the release.
-launcher=base/'Connect AI.command'
-launcher_text='#!/bin/zsh\nset -eu\n'+ 'cd '+"'"+str(base).replace("'","'\\''")+"/current'\n" + "'"+node.replace("'","'\\''")+"' scripts/configure-ai.js\n"
-if launcher.exists():
-    if launcher.read_text()!=launcher_text:raise SystemExit('Existing key setup launcher differs. Inspect before replacing.')
-else:
-    launcher.write_text(launcher_text)
-    launcher.chmod(0o700)
+def ensure_launcher(name,script):
+    launcher=base/name
+    text='#!/bin/zsh\nset -eu\n'+ 'cd '+"'"+str(base).replace("'","'\\''")+"/current'\n" + "'"+node.replace("'","'\\''")+"' "+script+"\n"
+    if launcher.exists():
+        if launcher.read_text()!=text:raise SystemExit(f'Existing launcher {name} differs. Inspect before replacing.')
+    else:
+        launcher.write_text(text)
+        launcher.chmod(0o700)
+    return launcher
+launcher=ensure_launcher('Connect AI.command','scripts/configure-ai.js')
+feeds_launcher=ensure_launcher('Connect feeds.command','scripts/configure-feeds.js')
 next_link=base/'current.next'
 if next_link.exists() or next_link.is_symlink():raise SystemExit('Temporary release symlink already exists.')
 next_link.symlink_to(release);next_link.replace(current)
@@ -57,7 +61,7 @@ try:
     if after['workspace']!=before['workspace'] or after['revision']!=before['revision']:raise RuntimeError('Workspace differs after upgrade; investigate before proceeding.')
     ai=request('/api/research/status')
     postbackup=request('/api/backup',{})['backup']
-    print(json.dumps({'version':version,'previousRelease':str(previous),'workspacePreserved':True,'aiKeyPresent':ai['configured'],'preUpgradeBackup':backup,'postUpgradeBackup':postbackup,'keySetup':str(launcher)}))
+    print(json.dumps({'version':version,'previousRelease':str(previous),'workspacePreserved':True,'aiKeyPresent':ai['configured'],'preUpgradeBackup':backup,'postUpgradeBackup':postbackup,'keySetup':str(launcher),'feedSetup':str(feeds_launcher)}))
 except Exception:
     rollback=base/'current.rollback';rollback.symlink_to(previous);rollback.replace(current)
     subprocess.run(['launchctl','kickstart','-k',service],check=True)

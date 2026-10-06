@@ -12,8 +12,8 @@ const intakeInputSchema=z.object({entries:z.array(z.string().trim().min(1).max(8
 const chooseSchema=z.object({index:z.number().int().min(0).max(19),candidate:z.number().int().min(0).max(7).nullable()}).strict();
 
 export class WorkflowService {
- constructor(store,research){
-  this.store=store; this.db=store.db; this.research=research;
+ constructor(store,research,{feeds=null}={}){
+  this.store=store; this.db=store.db; this.research=research; this.feeds=feeds;
   this.db.exec(`CREATE TABLE IF NOT EXISTS dispositions (id TEXT PRIMARY KEY, company_id TEXT NOT NULL, disposition TEXT NOT NULL, set_by TEXT NOT NULL, run_id TEXT, rating TEXT, previous TEXT, note TEXT NOT NULL, invested TEXT, created_at TEXT NOT NULL);
    CREATE INDEX IF NOT EXISTS dispositions_company ON dispositions(company_id,created_at);`);
   research.onRunFinished=runId=>this.afterRun(runId);
@@ -188,7 +188,7 @@ export class WorkflowService {
   const {workspace}=this.store.read(), current=this.currentAll(), day=today();
   const companies=workspace.companies.map(c=>this.entry(c,current.get(c.id)||null,workspace,day));
   const active=companies.filter(e=>!e.archivedAt), count=d=>active.filter(e=>e.disposition.value===d).length;
-  return {today:day,companies,counts:{main:count('Watch')+count('Invested'),watch:count('Watch'),invested:count('Invested'),research:count('Research'),declined:count('Declined'),archived:companies.length-active.length,researching:active.filter(e=>e.pending).length},intakes:this.listIntakes()};
+  return {today:day,companies,counts:{main:count('Watch')+count('Invested'),watch:count('Watch'),invested:count('Invested'),research:count('Research'),declined:count('Declined'),archived:companies.length-active.length,researching:active.filter(e=>e.pending).length},intakes:this.listIntakes(),feeds:this.feeds?this.feeds.status():null};
  }
  companyOverview(companyId){ const {workspace}=this.store.read(), c=workspace.companies.find(x=>x.id===companyId); if(!c) fail('Company not found',404); return this.entry(c,this.current(companyId),workspace,today()); }
  entry(c,row,workspace,day){
@@ -197,7 +197,8 @@ export class WorkflowService {
   const age=d=>d?Math.round((Date.parse(day)-Date.parse(d))/86400000):null;
   const aiPrice=s&&s.price.value!=null?{value:s.price.value,currency:s.price.currency,asOfDate:s.price.asOfDate,source:'Research snapshot',runId:snap.runId}:null;
   const manualPrice=manual?{value:manual.price.value,currency:manual.currency,asOfDate:manual.quoteDate,source:'Manual snapshot',snapshotId:manual.id}:null;
-  const price=[aiPrice,manualPrice].filter(Boolean).sort((a,b)=>String(b.asOfDate||'').localeCompare(String(a.asOfDate||'')))[0]||null;
+  const obs=this.feeds?this.feeds.latestPrice(c.id):null, feedPrice=obs?{value:obs.close,currency:obs.currency,asOfDate:obs.date,source:obs.source,fetchedAt:obs.fetchedAt}:null;
+  const price=[feedPrice,aiPrice,manualPrice].filter(Boolean).sort((a,b)=>String(b.asOfDate||'').localeCompare(String(a.asOfDate||'')))[0]||null;
   if(price) price.ageDays=age(price.asOfDate);
   const figures=s?{runId:snap.runId,asOf:s.asOf,comparable:s.quality.comparable,warnings:s.quality.warnings.length,missing:s.quality.missing.length,currency:s.financials.currency,marketCap:s.marketCap.value,marketCapCurrency:s.marketCap.currency,multiples:s.derived.multiples,margins:s.derived.margins,revenueGrowthPct:s.derived.revenueGrowthPct,revenueGrowthSource:s.derived.revenueGrowthSource,netDebt:s.derived.netDebt,periodLabel:s.financials.periodLabel,periodType:s.financials.periodType}:null;
   const disposition=row?{value:row.disposition,setBy:row.setBy,since:row.createdAt,runId:row.runId,rating:row.rating,previous:row.previous,note:row.note,invested:row.invested,highlight:row.setBy==='app'&&row.rating==='Consider'?'Consider':null}
@@ -209,6 +210,6 @@ export class WorkflowService {
   }
   const listing={exchange:c.exchange||s?.identity.exchange||'',currency:c.currency||s?.identity.quoteCurrency||s?.price.currency||null};
   listing.fromResearch=listing.exchange!==c.exchange||listing.currency!==c.currency;
-  return {id:c.id,ticker:c.ticker,name:c.name,role:c.role,archivedAt:c.archivedAt,reviewDate:c.reviewDate,status:c.status,listing,notes:{thesis:!!c.thesis,risks:!!c.risks,disconfirming:!!c.disconfirming},disposition,notice,assessment,price,figures,pending,manualSnapshots:workspace.snapshots.filter(x=>x.companyId===c.id).length,scenarios:workspace.scenarios.filter(x=>x.companyId===c.id).length,decisions:workspace.decisions.filter(x=>x.companyId===c.id).length};
+  return {id:c.id,ticker:c.ticker,name:c.name,role:c.role,archivedAt:c.archivedAt,reviewDate:c.reviewDate,status:c.status,listing,profile:this.feeds?this.feeds.profile(c.id):null,feedPrice,notes:{thesis:!!c.thesis,risks:!!c.risks,disconfirming:!!c.disconfirming},disposition,notice,assessment,price,figures,pending,manualSnapshots:workspace.snapshots.filter(x=>x.companyId===c.id).length,scenarios:workspace.scenarios.filter(x=>x.companyId===c.id).length,decisions:workspace.decisions.filter(x=>x.companyId===c.id).length};
  }
 }

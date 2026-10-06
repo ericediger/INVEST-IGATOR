@@ -13,7 +13,7 @@ export function createApp(store,options={}) {
     next();
   });
   app.use(express.json({limit:'5mb',strict:true}));
-  app.get('/api/workspace',(req,res)=>res.json({...store.read(),today:today(),access:policy.label,accessDescription:policy.description,version:'1.4.1'}));
+  app.get('/api/workspace',(req,res)=>res.json({...store.read(),today:today(),access:policy.label,accessDescription:policy.description,version:'1.5.0'}));
   app.get('/api/health',(req,res)=>res.json({ok:true,schemaVersion:1}));
   app.get('/api/export',(req,res)=>res.attachment(`invest-igator-${today()}.json`).json(store.export()));
   app.get('/api/backups',(req,res)=>res.json({backups:store.backupStatus()}));
@@ -46,6 +46,14 @@ export function createApp(store,options={}) {
     app.post('/api/workflow/intake/:id/choose',route((req,res)=>res.json(workflow.chooseListing(req.params.id,req.body))));
     app.post('/api/workflow/dispositions',route((req,res)=>res.json(workflow.setDisposition(req.body))));
     app.post('/api/workflow/notes',route((req,res)=>res.json(workflow.fillNotes(req.body))));
+  }
+  const feeds=options.feeds;
+  if(feeds) {
+    // Price and filing feeds (1.5.0): status, stored closes, a budgeted manual refresh and the per-company feed profile.
+    app.get('/api/feeds/status',route((req,res)=>res.json(feeds.status())));
+    app.get('/api/feeds/prices/:companyId',route((req,res)=>res.json({prices:feeds.priceHistory(req.params.companyId,{from:typeof req.query.from==='string'?req.query.from:null})})));
+    app.post('/api/feeds/refresh',(req,res,next)=>{feeds.refreshPrices({kind:'manual',note:'manual'}).then(r=>res.json(r)).catch(next);});
+    app.post('/api/feeds/profile',route((req,res)=>res.json(feeds.setProfile(req.body))));
   }
   app.use(express.static(fileURLToPath(new URL('../public',import.meta.url)),{dotfiles:'deny',index:'index.html',etag:false}));
   app.use((req,res)=>res.status(404).json({error:'Not found'}));

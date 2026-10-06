@@ -1,13 +1,18 @@
 // Disposable browser-test service. Never reads production data or calls OpenAI.
-import {mkdtempSync} from 'node:fs';
+import {mkdtempSync,writeFileSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {Store} from '../server/store.js';
 import {ResearchService} from '../server/research.js';
 import {WorkflowService} from '../server/workflow.js';
+import {FeedService} from '../server/feeds/index.js';
+import {fakeFetcher} from './fixtures/feeds.mjs';
 import {createApp} from '../server/app.js';
 const dir=mkdtempSync(join(tmpdir(),'research-browser-fixture-'));
 const store=new Store(join(dir,'research.sqlite'),join(dir,'backups'));
+// Synthetic feed keys in the disposable data folder; the fake fetcher answers Tiingo, SEC EDGAR and CoinGecko without any network call.
+writeFileSync(join(dir,'tiingo-api-key'),'SYNTHETICTIINGOTOKEN0000000000000000\n',{mode:0o600});writeFileSync(join(dir,'edgar-contact'),'Fixture Owner fixture@example.com\n',{mode:0o600});
+const feeds=new FeedService(store,{dataDir:dir,version:'fixture',fetcher:fakeFetcher({close:123.45}),schedule:false});
 const p=(text,sourceIds=['S1'])=>({text,sourceIds});
 const report={summary:p('SYNTHETIC UI TEST — this is not investment research. The fixture supports a watch recommendation until valuation evidence is available.'),recommendation:'Watch',rationale:p('SYNTHETIC UI TEST — await verified financial inputs and a dated valuation.'),evidenceConfidence:'Low',businessQuality:p('SYNTHETIC UI TEST — business quality needs primary-source verification.'),financialAssessment:p('SYNTHETIC UI TEST — financial metrics are deliberately absent.'),valuationAssessment:p('No snapshot or calculated valuation is available.',[]),bullCase:[p('SYNTHETIC UI TEST — illustrative supporting evidence.')],bearCase:[p('SYNTHETIC UI TEST — illustrative counterevidence.',['S2'])],catalysts:[p('SYNTHETIC UI TEST — an illustrative dated catalyst.')],changes:[],assumptions:['SYNTHETIC UI TEST — assumptions need verification.'],missingEvidence:['A current price and valuation inputs are missing.'],invalidationTriggers:['SYNTHETIC UI TEST — review new contrary evidence.'],nextSteps:['Verify the source documents and add a dated snapshot.']};
 const eps={value:7.25,period:'FY 2027 analyst consensus',periodEndDate:'2027-12-31',basis:'Adjusted diluted EPS',currency:'USD',shareBasis:'Diluted common share',kind:'Analyst estimate',sourceId:'S1',publicationDate:null,estimateAsOfDate:null,explanation:'SYNTHETIC UI TEST — an analyst estimate for form-fill verification only.',sourceExcerpt:'FY 2027 adjusted diluted EPS consensus is USD 7.25 per share.',missingFields:[]};
@@ -40,6 +45,6 @@ const provider={model:'SYNTHETIC-browser-fixture',configured:()=>true,async requ
  } else {text=`SYNTHETIC UI TEST — a cited answer. [Fixture source](${url}) <script>window.fixtureXSS=1</script>`;annotations=[{type:'url_citation',url:'https://example.com/filing',title:'SYNTHETIC source'},{type:'url_citation',url:'https://example.com/challenge',title:'SYNTHETIC challenge source'}];}
  return {id:`fixture-${calls}`,model:this.model,status:'completed',usage:{input_tokens:10,output_tokens:20},output:[{type:'message',content:[{type:'output_text',text,annotations}]}]};
 }};
-const research=new ResearchService(store,provider,{concurrency:2}),root='http://127.0.0.1:5197',workflow=new WorkflowService(store,research);
-const server=createApp(store,{origin:root,research,workflow}).listen(5197,'127.0.0.1',()=>console.log('Browser fixture ready'));
-process.on('SIGTERM',()=>{research.close();server.close(()=>{store.close();process.exit(0);});});
+const research=new ResearchService(store,provider,{concurrency:2,feeds}),root='http://127.0.0.1:5197',workflow=new WorkflowService(store,research,{feeds});
+const server=createApp(store,{origin:root,research,workflow,feeds}).listen(5197,'127.0.0.1',()=>console.log('Browser fixture ready'));
+process.on('SIGTERM',()=>{research.close();feeds.close();server.close(()=>{store.close();process.exit(0);});});

@@ -8,7 +8,7 @@ const root='http://127.0.0.1:5197',out=resolve('verification/browser');mkdirSync
 const child=spawn(process.execPath,['tests/browser-fixture-server.mjs'],{stdio:['ignore','pipe','inherit']});
 let browser;const checks=[],errors=[];
 async function check(name,fn){await fn();checks.push(name);console.log('PASS '+name);}
-async function waitFor(page,fn){await page.waitForFunction(fn,{},{timeout:15000});}
+async function waitFor(page,fn){try{await page.waitForFunction(fn,{},{timeout:15000});}catch(e){e.message+=' — while waiting for: '+fn.toString().slice(0,200);throw e;}}
 try{
  await Promise.race([once(child.stdout,'data'),once(child,'exit').then(([code])=>{throw new Error('Fixture exited '+code);})]);
  browser=await chromium.launch({headless:true,executablePath:'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'});
@@ -32,7 +32,7 @@ try{
  await check('review runs to completion with inline citations and saved research basis',async()=>{
   await page.locator('#ai-review').click();await page.locator('.ai-verdict').waitFor({timeout:20000});
   assert.equal(await page.locator('.ai-verdict h2').textContent(),'Watch');assert.ok(await page.locator('.ai-cite').count());
-  assert.ok((await page.locator('.ai-cite').first().getAttribute('href')).startsWith('https://example.com/'));
+  assert.match(await page.locator('.ai-cite').first().getAttribute('href'),/^https:\/\/(example\.com|www\.tiingo\.com|www\.sec\.gov|data\.sec\.gov)\//,'citations link to research or feed sources');
   assert.ok((await page.locator('#ai-result').textContent()).includes('Valuation incomplete'));
   await page.evaluate(()=>document.querySelector('.ai-verdict')?.scrollIntoView());await page.screenshot({path:out+'/desktop-assessment.png',fullPage:true});
  });
@@ -51,7 +51,7 @@ try{
   if(await page.locator('#research-panel').isVisible())await page.locator('#ai-close').click();
   await page.goto(root+'/#home');await page.locator('.home-row[data-ticker="ETN"]').waitFor();
   const row=page.locator('.home-row[data-ticker="ETN"]'),text=await row.textContent();
-  assert.ok(text.includes('USD 123.45'));assert.ok(text.includes('Fwd P/E'));assert.ok(text.includes('NYSE'));assert.ok(text.includes('SYNTHETIC UI TEST'));assert.ok(text.includes('Research snapshot'));
+  assert.ok(text.includes('USD 123.45'));assert.ok(text.includes('Fwd P/E'));assert.ok(text.includes('NYSE'));assert.ok(text.includes('SYNTHETIC UI TEST'));assert.ok(/Tiingo close|Research snapshot/.test(text),'the price is labeled with its source');
   assert.equal(await row.locator('.home-disposition .badge.watching').count(),1);assert.equal(await row.locator('.home-disposition .badge.owner').count(),0);
   assert.ok((await page.locator('#home-tabs').textContent()).includes('Research 6'));
   await page.locator('#home-tabs a[href="#home/research"]').click();await page.waitForFunction(()=>document.querySelectorAll('.home-row').length===6);
@@ -135,13 +135,36 @@ try{
   await page.unroute(pattern);
  });
  await check('settings retain a dirty draft when another client saves; stale save is rejected',async()=>{
-  await page.locator('#ai-settings summary').click();await page.locator('#ai-criteria').fill('Browser local mandate draft with sufficient length.');
+  await page.locator('#ai-settings > summary').click();await page.locator('#ai-criteria').fill('Browser local mandate draft with sufficient length.');
   const info=await(await page.request.get(root+'/api/research/status')).json();const {revision,...settings}=info.settings;
   const response=await page.request.post(root+'/api/research/settings',{headers:{Origin:root,'X-Research-Request':'1','If-Match':revision},data:{...settings,horizonMonths:18}});assert.equal(response.status(),200);
   await page.waitForTimeout(2800);assert.equal(await page.locator('#ai-criteria').inputValue(),'Browser local mandate draft with sufficient length.');
   await page.locator('#ai-settings-form button[type=submit]').click();await waitFor(page,()=>document.querySelector('#ai-settings-feedback').textContent.includes('changed'));
   await page.locator('#ai-settings-reload').click();await waitFor(page,()=>document.querySelector('#ai-horizon').value==='18');
-  await page.locator('#ai-settings summary').click();
+  await page.locator('#ai-settings > summary').click();
+ });
+ await check('the mandate form saves per-stage model settings and reloads them',async()=>{
+  await page.locator('#ai-settings > summary').click();await page.locator('.ai-stages summary').click();
+  await page.locator('#ai-stage-analyze-effort').selectOption('high');await page.locator('#ai-stage-extract-model').fill('fixture-extract');
+  await page.locator('#ai-settings-form button[type=submit]').click();await waitFor(page,()=>document.querySelector('#ai-settings-feedback').textContent.includes('Saved'));
+  const info=await(await page.request.get(root+'/api/research/status')).json();assert.equal(info.settings.stageSettings.analyze.effort,'high');assert.equal(info.settings.stageSettings.extract.model,'fixture-extract');assert.equal(info.settings.stageSettings.collect.model,null);
+  await page.locator('#ai-settings-reload').click();await waitFor(page,()=>document.querySelector('#ai-stage-analyze-effort').value==='high');
+  await page.locator('#ai-settings > summary').click();
+ });
+ await check('Data & backups shows the feed status, Home refreshes Tiingo closes, and the company page saves listing and feed settings',async()=>{
+  await page.goto(root+'/#data');await waitFor(page,()=>document.querySelector('#feeds-status')?.textContent.includes('Tiingo connected'));
+  assert.ok((await page.locator('#feeds-status').textContent()).includes('SEC EDGAR contact set'));
+  await page.goto(root+'/#home');await page.locator('#feeds-refresh').waitFor();assert.ok((await page.locator('#feeds-line').textContent()).includes('Prices:'));
+  await page.locator('#feeds-refresh').click();await page.waitForFunction(()=>document.querySelector('#toast')?.textContent.includes('Prices refreshed'),{},{timeout:75000}); // paced at most 30 Tiingo requests a minute
+  await waitFor(page,()=>document.querySelector('.home-row[data-ticker="ETN"] .home-figures')?.textContent.includes('Tiingo close'));
+  const status=await(await page.request.get(root+'/api/feeds/status')).json();assert.ok(status.companiesWithPrices>=1);assert.ok(status.lastFetch.updated>=1);assert.equal(status.lastFetch.kind,'manual');
+  await page.goto(root+'/#company/'+companies[0].id+'/overview');await page.locator('#feed-profile').waitFor();
+  assert.ok((await page.locator('#feed-profile').textContent()).includes('Latest feed close USD 123.45'));
+  await page.locator('#feed-profile select[name=assetType]').selectOption('Fund');await page.locator('#feed-profile button[type=submit]').click();await waitFor(page,()=>document.querySelector('#toast')?.textContent.includes('Listing and feed settings saved'));
+  await page.locator('#feed-profile').waitFor();await waitFor(page,()=>document.querySelector('#feed-profile select[name=assetType]')?.value==='Fund');
+  const overview=await(await page.request.get(root+'/api/workflow/overview')).json();assert.equal(overview.companies[0].profile.assetType,'Fund');
+  await page.locator('#feed-profile select[name=assetType]').selectOption('Company');await page.locator('#feed-profile button[type=submit]').click();await waitFor(page,()=>document.querySelector('#toast')?.textContent.includes('Listing and feed settings saved'));
+  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
  });
  await check('Escape closes the panel and returns focus to its launcher',async()=>{
   await page.locator('#ai-question').focus();await page.keyboard.press('Escape');assert.equal(await page.locator('#research-panel').isVisible(),false);assert.equal(await page.evaluate(()=>document.activeElement.id),'research-toggle');

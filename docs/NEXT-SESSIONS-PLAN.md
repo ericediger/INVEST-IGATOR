@@ -147,7 +147,11 @@ The session the owner tests by adding a few companies by hand. Shipped as planne
 - The five companies with stored assessments populate immediately at no cost. APH, PWR, FIX and ANET show as Research until the owner runs them.
 - Tests: mapping, override persistence, Invested never set automatically, missing data gives Research, intake ambiguity; browser checks on desktop and mobile.
 
-### Session 4 — Data feeds and the agent split (release 1.5.0)
+### Session 4 — Data feeds and the agent split (done 2026-10-06, release 1.5.0)
+
+Shipped as planned: Tiingo end-of-day closes, SEC EDGAR fiscal-year facts and CoinGecko prices behind a persisted rate limiter and a budget check; a dated price-observation table filled once per New York trading day after 16:45 ET from an in-process timer (no new LaunchAgent); feed-first snapshot collection with the model narrowed to what feeds lack; per-stage model and effort settings; asset type and feed symbol per record; keys through `Connect feeds.command`. Not done: the bounded live before/after token measurement, because the owner's Tiingo token and SEC contact were not yet entered when the release shipped; run `scripts/verify-live-sector.mjs ... snapshot` once they are, and compare the search-stage tokens with the 1.3.x figures in `TEST-RESULTS.md`. FMP is accepted by the setup script but unused.
+
+Planned detail:
 
 - Tiingo daily prices and history, CoinGecko, SEC EDGAR financials, with the rate limiter and budget check from section 5. Private key setup command.
 - A dated price-observation table filled once a day after the close for every active company.
