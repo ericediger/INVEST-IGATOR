@@ -13,7 +13,7 @@ export function createApp(store,options={}) {
     next();
   });
   app.use(express.json({limit:'5mb',strict:true}));
-  app.get('/api/workspace',(req,res)=>res.json({...store.read(),today:today(),access:policy.label,accessDescription:policy.description,version:'1.5.1'}));
+  app.get('/api/workspace',(req,res)=>res.json({...store.read(),today:today(),access:policy.label,accessDescription:policy.description,version:'1.5.2'}));
   app.get('/api/health',(req,res)=>res.json({ok:true,schemaVersion:1}));
   app.get('/api/export',(req,res)=>res.attachment(`invest-igator-${today()}.json`).json(store.export()));
   app.get('/api/backups',(req,res)=>res.json({backups:store.backupStatus()}));

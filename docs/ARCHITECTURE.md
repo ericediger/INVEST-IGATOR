@@ -18,7 +18,7 @@ Official guidance checked September 6, 2026:
 
 ## Release 1.0.1 — confirmed home-network access
 
-The owner confirmed “Trusted home network; no login.” The installed app now binds to 127.0.0.1 and the specific private IPv4 address <lan-address>, accepting peers only in loopback or <trusted-subnet>. Each request must use an exact configured Host; writes must match that Host's Origin. No proxy trust, wildcard origin, public listener, router or firewall change is introduced. Access is deliberately shared with every trusted LAN device, with no app login or TLS. The UI reports the active boundary and identifies the server as the data location. This supersedes the initial loopback-only installation note above. Schema and persistence are unchanged.
+The owner confirmed “Trusted home network; no login.” The installed app now binds to 127.0.0.1 and the private IPv4 address configured in `RESEARCH_LAN_ADDRESS`, accepting peers only in loopback or the subnet configured in `RESEARCH_TRUSTED_SUBNET`. Each request must use an exact configured Host; writes must match that Host's Origin. No proxy trust, wildcard origin, public listener, router or firewall change is introduced. Access is deliberately shared with every trusted LAN device, with no app login or TLS. The UI reports the active boundary and identifies the server as the data location. This supersedes the initial loopback-only installation note above. Schema and persistence are unchanged.
 
 ## Release 1.1.0 — AI research service
 

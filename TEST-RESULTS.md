@@ -192,3 +192,13 @@ October 6, 2026, at the owner's request (Project Signal brief): a dark token-bas
 ### Installed release verification
 
 Release **1.5.1** was activated with `scripts/upgrade-ai.py`; 1.5.0 remains available for rollback. Pre-upgrade backup: `backup-2026-10-06T20-58-39-898Z-b70835fc-badf-4a30-b4b8-efa4581df41a.sqlite`; post-upgrade backup: `backup-2026-10-06T20-58-45-571Z-5da76de4-3da1-4bcc-aaa2-4ae12f9615eb.sqlite`. Workspace and revision unchanged. Both addresses serve 1.5.1; `scripts/verify-ai-install.mjs` passed (`verification/installed-ai-1.5.1.json`); error log empty. An isolated headless session opened the installed Home: Watch lists ACM, ETN, LITE and WSP, Invested is empty, Details opened for LITE, no overflow on desktop or phone (`verification/browser/installed-home-1.5.1.png`, `installed-home-mobile-1.5.1.png`). No research was started and no paid call made.
+
+## Source verification for 1.5.2 (2026-10-13, not deployed)
+
+Change: the install and verification scripts were made machine-independent (`scripts/install-local.py`, `scripts/verify-local.py`, `scripts/enable-trusted-lan.py`, `scripts/verify-ai-install.mjs`) and `docs/API.md`, `docs/ARCHITECTURE.md` and `README.md` were generalized. No application code changed except the version literal. Verified on a different, Apple-silicon Mac in a scratch copy with freshly installed dependencies, because this checkout's `node_modules` holds Intel binaries for better-sqlite3.
+
+- `npm test`: 69 of 71 passed. The two failures are tests 23 and 25 in `tests/feeds.test.js` and are clock-dependent: they expect the fixture's latest close to be dated 2026-10-06, the day they were written, while the fixture follows the real clock (2026-10-13 today). They do not touch the changed files.
+- `npm run build`: passed.
+- Browser suite (`tests/browser-research.mjs`, Playwright 1.55.0, installed Google Chrome, synthetic provider): 26 passed, 0 errors. Screenshots in `verification/browser/` were not refreshed.
+- Python scripts: `py_compile` passed; the LaunchAgent-reading and address-validation logic was exercised against sample loopback and LAN plists. The scripts were not run against a live service, because none is installed on the verifying Mac.
+- Not deployed: the live service remains 1.5.1. Deploy with `python3 scripts/upgrade-ai.py` from `source/` on the server Mac, then run `node scripts/verify-ai-install.mjs`, which now reads the addresses from the installed LaunchAgent.
