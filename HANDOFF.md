@@ -1,6 +1,6 @@
 # HANDOFF — INVEST-IGATOR
 
-Last updated: 2026-10-06 (Sessions 3 and 4: workflow releases 1.4.0 and 1.4.1, feeds release 1.5.0, home redesign 1.5.1). Rewritten whole; it replaces every earlier version of this file.
+Last updated: 2026-10-13 (publication to GitHub after a privacy scrub; the app is unchanged at release 1.5.1). The state below is otherwise as of 2026-10-06 (Sessions 3 and 4: workflow releases 1.4.0 and 1.4.1, feeds release 1.5.0, home redesign 1.5.1). Rewritten whole; it replaces every earlier version of this file.
 
 Read this file, then `docs/NEXT-SESSIONS-PLAN.md`. Working rules for agents are in `AGENTS.md`.
 
@@ -27,7 +27,7 @@ Owner's requirements, in order of authority:
 - AI archive: 11 completed runs (8 company reviews, 1 intake, 1 discovery, 1 comparison) and 1 completed sector analysis.
 - AI settings: model `gpt-6-astra`, medium reasoning, 12-month horizon, 10 runs a day, 6 companies per sector analysis, 2 concurrent jobs, prompt version 2.
 - Verification on 2026-10-06: 71 automated tests, the build check and 26 browser checks passed; a rehearsal on a restored copy of the production backup matched expectations; the installed release passed `scripts/verify-ai-install.mjs` on both addresses after each release. Details in `TEST-RESULTS.md`.
-- Git: `main` is at release 1.5.1 (branches `session-2-invest-igator` and `session-3-workflow` are merged and can be deleted). No remote.
+- Git: `main` is at release 1.5.1 plus the 2026-10-13 publication commit. Remote `origin` is the **public** repository https://github.com/ericediger/INVEST-IGATOR; only `main` is pushed. History was rewritten on 2026-10-13 to remove the owner's name, so commit ids quoted in earlier reports and logs refer to the old history; the map is in `docs/session-logs/2026-10-13-18-03.md`. Branches `session-2-invest-igator` and `session-3-workflow` are merged and can be deleted. Keep personal data and keys out of every commit: the repository is public.
 
 ## Where everything lives
 
@@ -98,7 +98,7 @@ The owner has tried the intake (Lumentum → LITE, Watch) and asked for the rede
 - No multi-company live analysis beyond the owner's 2-company run has been reviewed. The model often leaves net income, diluted EPS and total debt empty. AECOM's "revenue growth −14% (reported)" deserves a manual check.
 - Restarting the service interrupts running research (including intake and the reviews it queued); there is no automatic retry.
 - Backups are on this Mac only. The backup job leaves `.partial-shm` and `.partial-wal` files behind (harmless).
-- Docs and scripts contain the owner's first name, a private LAN address and local paths. Review before ever adding a git remote.
+- The repository is public since 2026-10-13. The owner's name was removed from the tree and history then; docs, tests and scripts still contain the private LAN address `<lan-address>` and local install paths (not personal data). Removing the address needs a code change and a release; see `docs/session-logs/2026-10-13-18-03.md`. Review every commit for personal data and keys before pushing.
 
 ## Session history
 
