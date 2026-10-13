@@ -1,5 +1,11 @@
 # INVEST-IGATOR — local MVP 1.5.1
 
+[![Watch the two-minute explainer video](media/explainer-poster.jpg)](https://ericediger.github.io/INVEST-IGATOR/media/invest-igator-explainer.mp4)
+
+**[▶ Watch the 2-minute explainer](https://ericediger.github.io/INVEST-IGATOR/media/invest-igator-explainer.mp4)** · **[Try the live demo](https://ericediger.github.io/INVEST-IGATOR/demo/)**
+
+The demo is the real front end on fictional sample companies with scripted research replies; nothing is saved and no key is needed. The explainer was recorded from the same demo.
+
 Formerly "Investment Research"; renamed on October 2, 2026. Start with [HANDOFF.md](HANDOFF.md) for the current state and [the session plan](docs/NEXT-SESSIONS-PLAN.md) for what comes next. Release 1.4.0 (October 6, 2026) added the research workflow: add a company by name or ticker on **Home**, the assistant verifies the listing, researches it and files it as Watch, Research or Declined; you can override any filing and only you can mark a company **Invested**. Release 1.5.0 added price and financials feeds (Tiingo end-of-day closes, SEC EDGAR fiscal-year financials, CoinGecko for crypto): numbers come from feeds first and the model researches what they lack. Actual versus modeled performance is planned next. Internal identifiers keep the old name on purpose: the export format `investment-research`, the data folder `InvestmentResearch` and the LaunchAgent labels `com.investmentresearch.*`.
 
 Open **http://<lan-address>:5191** from your trusted home network, or **http://127.0.0.1:5191** on the server Mac. The workspace was seeded with ETN, VRT, NVT, APH, PWR, FIX and ANET as research candidates. Financial values start blank. No household account data was imported.
