@@ -20,6 +20,8 @@ const FIXED=new Date('2026-10-06T21:00:00Z'); // Tuesday 17:00 New York
 function dataDir({tiingo=true,edgar=true}={}){const dir=mkdtempSync(join(tmpdir(),'feeds-test-'));if(tiingo)writeFileSync(join(dir,'tiingo-api-key'),'SYNTHETICTIINGOTOKEN0000000000000000\n',{mode:0o600});if(edgar)writeFileSync(join(dir,'edgar-contact'),'Test Owner test@example.com\n',{mode:0o600});return dir;}
 // The default test clock advances seven seconds per reading so sliding windows move as they would in real time.
 const ticking=(start=FIXED.getTime())=>{let t=start;return ()=>new Date(t+=7000);};
+// Code that reads the real date (stored fetch timestamps, a research run's as-of day) sees the fixture day; time still flows from there.
+function fixtureDay(t,start=FIXED){const Real=Date,offset=start.getTime()-Real.now();class Shifted extends Real{constructor(...a){super(...(a.length?a:[Real.now()+offset]));}static now(){return Real.now()+offset;}}globalThis.Date=Shifted;t.after(()=>{globalThis.Date=Real;});}
 function setup(t,{keys={},fetcherOptions={},clock=ticking()}={}){
  const dir=mkdtempSync(join(tmpdir(),'feeds-store-')),store=new Store(join(dir,'research.sqlite'),join(dir,'backups')),calls=[],closers=[];
  const feeds=new FeedService(store,{dataDir:dataDir(keys),version:'test',fetcher:fakeFetcher({...fetcherOptions,calls}),clock});t.after(()=>{for(const c of closers.reverse()) c();feeds.close();store.close();});
@@ -70,6 +72,7 @@ test('SEC EDGAR: fiscal years keyed by period end with restatements winning, deb
 });
 
 test('daily close fetch stores dated observations, marks symbols Tiingo lacks, refuses a plan over the quota, and persists usage across restarts',async t=>{
+ fixtureDay(t);
  const {store,feeds,etn,calls}=setup(t);
  const zzz=company(store,'ZZZ'),wsp=company(store,'WSP',{exchange:'Toronto Stock Exchange (TSX)',currency:'CAD'});
  assert.equal(feeds.tiingoEligible(wsp),false,'non-US listings are not sent to Tiingo');
@@ -132,6 +135,7 @@ class Provider{
 async function finished(ai,id){for(let i=0;i<600;i++){const run=ai.read(id);if(!['queued','running'].includes(run.status))return run;await new Promise(r=>setTimeout(r,5));}throw new Error('Did not finish');}
 
 test('a snapshot run is feed first: feed figures override the model, feed sources are cited, the search is narrowed, and the home overview shows the feed close',async t=>{
+ fixtureDay(t);
  const {store,feeds,etn,closers}=setup(t),provider=new Provider();
  const ai=new ResearchService(store,provider,{concurrency:1,feeds}),wf=new WorkflowService(store,ai,{feeds});closers.push(()=>ai.close());
  const run=await finished(ai,ai.enqueue({companyId:etn.id,kind:'snapshot'}).id);

@@ -20,6 +20,8 @@ for(const root of targets){
  checks.push({address:root,version:w.version,keyConfigured:ai.configured,model:ai.model,reasoningEffort:ai.reasoningEffort,researchRuns:(await(await fetch(root+'/api/research/runs')).json()).runs.length});
 }
 for(const check of checks){assert.equal(check.model,checks[0].model);assert.equal(check.reasoningEffort,checks[0].reasoningEffort);}
+// The repository is public: records and output name any non-loopback address as <lan-address>.
+const recorded=checks.map(c=>({...c,address:c.address.replace(/^(https?:\/\/)(?!127\.0\.0\.1[:/]|localhost[:/])[^:/]+/,'$1<lan-address>')}));
 const escape=s=>s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
 const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_PATH||'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'});
 const errors=[];
@@ -34,6 +36,6 @@ try{
  await page.locator('details.optional-metric').first().locator('summary').click();await page.locator('#research-forward-eps').waitFor();
  assert.deepEqual(errors,[]);
  await page.screenshot({path:resolve('verification/browser/installed-setup.png'),fullPage:true});
- writeFileSync('verification/installed-ai-'+version+'.json',JSON.stringify({checks,browser:'Installed model status, research inbox and EPS research action verified without starting paid research',errors,liveProviderTest:false},null,2));
- console.log(JSON.stringify({checks,installedBrowser:'passed',errors,liveProviderTest:false}));
+ writeFileSync('verification/installed-ai-'+version+'.json',JSON.stringify({checks:recorded,browser:'Installed model status, research inbox and EPS research action verified without starting paid research',errors,liveProviderTest:false},null,2));
+ console.log(JSON.stringify({checks:recorded,installedBrowser:'passed',errors,liveProviderTest:false}));
 }finally{await browser.close();}

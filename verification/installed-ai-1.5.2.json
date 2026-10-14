@@ -1,7 +1,7 @@
 {
   "checks": [
     {
-      "address": "http://<lan-address>:5191",
+      "address": "http://127.0.0.1:5191",
       "version": "1.5.2",
       "keyConfigured": true,
       "model": "gpt-6-astra",
