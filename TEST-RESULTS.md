@@ -202,3 +202,7 @@ Change: the install and verification scripts were made machine-independent (`scr
 - Browser suite (`tests/browser-research.mjs`, Playwright 1.55.0, installed Google Chrome, synthetic provider): 26 passed, 0 errors. Screenshots in `verification/browser/` were not refreshed.
 - Python scripts: `py_compile` passed; the LaunchAgent-reading and address-validation logic was exercised against sample loopback and LAN plists. The scripts were not run against a live service, because none is installed on the verifying Mac.
 - Not deployed: the live service remains 1.5.1. Deploy with `python3 scripts/upgrade-ai.py` from `source/` on the server Mac, then run `node scripts/verify-ai-install.mjs`, which now reads the addresses from the installed LaunchAgent.
+
+## Privacy scrub of the repository (2026-10-13, no release)
+
+Every machine and network detail was removed from the repository and its full history (see `docs/session-logs/2026-10-13-20-12.md`): the records above now show `<lan-address>` where the server's address was, and `tests/access.test.js` uses a fictitious network. Verified in a scratch copy with freshly installed dependencies: `npm test` 69 of 71 (the same two clock-dependent feeds tests as for 1.5.2), `tests/access.test.js` 3 of 3, build check passed. No application code changed and nothing was deployed.
