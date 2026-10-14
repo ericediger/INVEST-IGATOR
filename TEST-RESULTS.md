@@ -206,3 +206,17 @@ Change: the install and verification scripts were made machine-independent (`scr
 ## Privacy scrub of the repository (2026-10-13, no release)
 
 Every machine and network detail was removed from the repository and its full history (see `docs/session-logs/2026-10-13-20-12.md`): the records above now show `<lan-address>` where the server's address was, and `tests/access.test.js` uses a fictitious network. Verified in a scratch copy with freshly installed dependencies: `npm test` 69 of 71 (the same two clock-dependent feeds tests as for 1.5.2), `tests/access.test.js` 3 of 3, build check passed. No application code changed and nothing was deployed.
+
+## Release 1.5.2 — deployment (2026-10-13)
+
+The GitHub history was rewritten on 2026-10-13, so the old checkout was not pulled into: `invest-igator/source` was renamed to `invest-igator/source-before-2026-10-13` (clean tree, `main` at the old-history 1.5.1 commit) and the repository https://github.com/ericediger/INVEST-IGATOR was cloned as `invest-igator/source` at the release 1.5.2 commit (`0dfecda` in the current history). `npm ci` installed dependencies on the server Mac (Node 20.11.0); better-sqlite3 loads. Before deploying, `scripts/upgrade-ai.py` was compared with the old checkout (identical), and the only non-documentation code change from 1.5.1 is the version literal in `server/app.js`.
+
+- `npm test`: 69 of 71 passed. The failures are tests 23 and 25 in `tests/feeds.test.js`, the clock-dependent fixtures described under “Source verification for 1.5.2”; the old 1.5.1 checkout fails the same two tests today.
+- `npm run build`: passed.
+- Browser suite (`tests/browser-research.mjs`, Playwright 1.55.0 in a scratch folder, installed Google Chrome, synthetic provider): 26 passed, 0 errors. The screenshots it rewrote were restored to their committed versions.
+
+### Installed release verification
+
+Release **1.5.2** was activated with `python3 scripts/upgrade-ai.py`; 1.5.1 remains available for rollback. Pre-upgrade backup: `backup-2026-10-13T23-49-21-773Z-3a397a91-7445-42d3-a136-29ca7b8a302b.sqlite`; post-upgrade backup: `backup-2026-10-13T23-49-26-267Z-d76b86cd-3b6e-44d1-9074-4209822166fd.sqlite`. The script reported the workspace preserved and the API key present. `/api/workspace` reports version 1.5.2 with 10 companies, 14 evidence notes, 0 snapshots, 0 scenarios and 0 decisions (unchanged). `node scripts/verify-ai-install.mjs` passed, reading both addresses from the installed LaunchAgent: loopback and the trusted-LAN address both serve 1.5.2, key configured, `gpt-6-astra` at medium reasoning, 11 research runs; installed browser check passed with no page errors (`verification/installed-ai-1.5.2.json`). `app-error.log` is empty. No research was started and no paid call was made.
+
+After the second history rewrite (“Privacy scrub of the repository” above), the server Mac's clone was re-synced: `git fetch origin`, then only this entry's commit was rebased onto the rewritten `main` (the other commits ahead were old-history copies of rewritten commits). The verification record carries `<lan-address>` in place of the server's address, as the scrub requires.

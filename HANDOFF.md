@@ -1,6 +1,6 @@
 # HANDOFF — INVEST-IGATOR
 
-Last updated: 2026-10-13 (publication to GitHub after a privacy scrub; the app is unchanged at release 1.5.1). The state below is otherwise as of 2026-10-06 (Sessions 3 and 4: workflow releases 1.4.0 and 1.4.1, feeds release 1.5.0, home redesign 1.5.1). Rewritten whole; it replaces every earlier version of this file.
+Last updated: 2026-10-13 (publication to GitHub after a privacy scrub; release 1.5.2 deployed the same day). The state below is otherwise as of 2026-10-06 (Sessions 3 and 4: workflow releases 1.4.0 and 1.4.1, feeds release 1.5.0, home redesign 1.5.1). Rewritten whole; it replaces every earlier version of this file.
 
 Read this file, then `docs/NEXT-SESSIONS-PLAN.md`. Working rules for agents are in `AGENTS.md`.
 
@@ -19,7 +19,8 @@ Owner's requirements, in order of authority:
 ## Current state
 
 - **Public demo and explainer (2026-10-13)**: GitHub Pages serves the repo root (`.nojekyll`, root `index.html` redirects to `demo/`). `demo/index.html` loads the unmodified front end from `public/` with `demo/demo-mode.js`, which answers `/api/*` from `demo/demo-data.json` (captured from a disposable copy of the server on fictional companies with a scripted provider) and an in-memory workspace; nothing is stored. `media/` holds the two-minute explainer and its poster, linked at the top of the README. The video pipeline lives outside this repo (EXPLAINER project, `videos/invest-igator/`).
-- **Live version: 1.5.2** according to the owner (deployed 2026-10-13 by an agent on the server Mac with `scripts/upgrade-ai.py` from a fresh clone; the server-side entry for `TEST-RESULTS.md` is still to be added from that Mac). 1.5.1, activated 2026-10-06, is the dark-interface home redesign requested by the owner (Project Signal brief): Invested and Watch sections, compact rows, Details disclosure, triggers from stored research.
+- **Live version: 1.5.2**, activated 2026-10-13 on the server Mac with `scripts/upgrade-ai.py` from a fresh clone; server-side verification is in `TEST-RESULTS.md` (“Release 1.5.2 — deployment”). 1.5.2 changed only the install and verification scripts and docs; the app behaves as 1.5.1, activated 2026-10-06, the dark-interface home redesign requested by the owner (Project Signal brief): Invested and Watch sections, compact rows, Details disclosure, triggers from stored research.
+- **Server Mac checkout**: `invest-igator/source` is a clone of the GitHub repository, re-synced to the rewritten `main` after the second rewrite. The checkout from before both rewrites (old history, no remote) is kept untouched as `invest-igator/source-before-2026-10-13`.
 - **Feeds are dormant until the owner runs `Connect feeds.command`** (Tiingo token and SEC EDGAR contact). Then closes are fetched daily after 16:45 ET while the app runs, snapshots become feed first, and the bounded live token measurement can be run (`scripts/verify-live-sector.mjs … snapshot`). Open `http://127.0.0.1:5191` on this Mac or `http://<lan-address>:5191` on the trusted home LAN.
 - **Home screen** (`#home`): an *Add companies* box (names or tickers); Invested and Watch as separate sections; Research, Declined and Archived as separate views. Each row: ticker and name, what the company does, disposition with who decides and assessed-ago (Stale after 30 days), one supporting line, one "what would move it" line; Details holds price, listing, multiples, why the rating, triggers, research actions and the decision control. The company page opens with the same research summary above the owner's notes.
 - **Dispositions on the live data**: ETN, ACM, WSP and LITE are Watch (from their assessments); VRT and NVT are Research (Research further); APH, PWR, FIX and ANET are Research (never researched). Nothing is Declined or Invested; no override has been used.
@@ -28,7 +29,7 @@ Owner's requirements, in order of authority:
 - AI archive: 11 completed runs (8 company reviews, 1 intake, 1 discovery, 1 comparison) and 1 completed sector analysis.
 - AI settings: model `gpt-6-astra`, medium reasoning, 12-month horizon, 10 runs a day, 6 companies per sector analysis, 2 concurrent jobs, prompt version 2.
 - Verification on 2026-10-06: 71 automated tests, the build check and 26 browser checks passed; a rehearsal on a restored copy of the production backup matched expectations; the installed release passed `scripts/verify-ai-install.mjs` on both addresses after each release. Details in `TEST-RESULTS.md`.
-- Git: `main` is at 1.5.2 plus the 2026-10-13 scrub commit. Remote `origin` is the **public** repository https://github.com/ericediger/INVEST-IGATOR; only `main` is pushed. History was rewritten twice on 2026-10-13 (first to remove the owner's name, then to remove every machine and network detail and to put all commits under the GitHub handle), so commit ids quoted in documents written before the second rewrite refer to earlier histories; the maps are in `docs/session-logs/2026-10-13-18-03.md` and `docs/session-logs/2026-10-13-20-12.md`. **The server Mac's clone predates the second rewrite and must be re-synced to the rewritten `main` before any work there.** Branches `session-2-invest-igator` and `session-3-workflow` are merged and can be deleted.
+- Git: `main` is at 1.5.2 plus the 2026-10-13 scrub commit. Remote `origin` is the **public** repository https://github.com/ericediger/INVEST-IGATOR; only `main` is pushed. History was rewritten twice on 2026-10-13 (first to remove the owner's name, then to remove every machine and network detail and to put all commits under the GitHub handle), so commit ids quoted in documents written before the second rewrite refer to earlier histories; the maps are in `docs/session-logs/2026-10-13-18-03.md` and `docs/session-logs/2026-10-13-20-12.md`. The server Mac's clone was re-synced to the rewritten `main` on 2026-10-13. Branches `session-2-invest-igator` and `session-3-workflow` are merged and can be deleted.
 
 ## Where everything lives
 
@@ -38,8 +39,8 @@ Owner's requirements, in order of authority:
 | Owner's reference files | project folder: `ITERATIONS_260913.txt`, the v008 brief and its reference image, `Google_Finance_Portfolio.xlsx` (a what-if list, not holdings) |
 | App folder | `INVEST-IGATOR/invest-igator/` |
 | **Source repository (git, edit here)** | `INVEST-IGATOR/invest-igator/source/` |
-| Installed releases (immutable, include `node_modules`) | `invest-igator/releases/1.0.0` … `1.4.0` |
-| Active release | `invest-igator/current` (symlink → `releases/1.5.1`) |
+| Installed releases (immutable, include `node_modules`) | `invest-igator/releases/1.0.0` … `1.5.2` |
+| Active release | `invest-igator/current` (symlink → `releases/1.5.2`) |
 | Key setup launchers | `invest-igator/Connect AI.command` (OpenAI), `invest-igator/Connect feeds.command` (Tiingo, SEC EDGAR contact, optional FMP) |
 | LaunchAgent backups | `invest-igator/service-config-backups/` |
 | Database, backups, logs, API key | `~/Library/Application Support/InvestmentResearch/` |

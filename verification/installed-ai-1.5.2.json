@@ -1,0 +1,23 @@
+{
+  "checks": [
+    {
+      "address": "http://<lan-address>:5191",
+      "version": "1.5.2",
+      "keyConfigured": true,
+      "model": "gpt-6-astra",
+      "reasoningEffort": "medium",
+      "researchRuns": 11
+    },
+    {
+      "address": "http://<lan-address>:5191",
+      "version": "1.5.2",
+      "keyConfigured": true,
+      "model": "gpt-6-astra",
+      "reasoningEffort": "medium",
+      "researchRuns": 11
+    }
+  ],
+  "browser": "Installed model status, research inbox and EPS research action verified without starting paid research",
+  "errors": [],
+  "liveProviderTest": false
+}
